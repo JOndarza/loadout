@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ClaudeSettingsState } from '@state/claude-settings.state';
 import { ConfigBloc } from './config.bloc';
 import { CmButtonComponent, CmToggleComponent } from '@shared/primitives';
-import type { HookEntry } from '@core/messages';
+import type { HookEntry, McpServer } from '@core/messages';
 
 @Component({
   selector: 'cm-config',
@@ -57,5 +57,15 @@ export class ConfigComponent {
 
   protected toggleSandbox(): void {
     this.bloc.setSandboxEnabled(!this.state.sandboxEnabled());
+  }
+
+  protected toggleMcp(server: McpServer): void {
+    this.bloc.toggleMcpServer(server.name);
+  }
+
+  protected mcpDetail(server: McpServer): string {
+    if (server.url)     return server.url;
+    if (server.command) return server.command;
+    return server.type ?? '—';
   }
 }

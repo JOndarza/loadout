@@ -29,4 +29,8 @@ export class ConfigBloc {
   setSandboxEnabled(enabled: boolean): void {
     this.bridge.send({ command: 'setSandboxEnabled', enabled });
   }
+
+  toggleMcpServer(name: string): void {
+    this.bridge.send({ command: 'toggleMcpServer', name });
+  }
 }

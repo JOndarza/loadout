@@ -11,6 +11,15 @@ export interface WorkspaceItem {
   memoryScope?: string | null;
 }
 
+export interface McpServer {
+  name: string;
+  scope: 'user' | 'project';
+  disabled: boolean;
+  type?: string | null;
+  url?: string | null;
+  command?: string | null;
+}
+
 export interface HookEntry {
   event: string;
   matcher: string;
@@ -95,6 +104,7 @@ export interface InitialData {
   lastApplied?: string;
   claudeSettings: ClaudeSettings;
   memoryFiles: MemoryFile[];
+  mcpServers: McpServer[];
 }
 
 export interface RegistryItem {
@@ -142,7 +152,8 @@ export type WebviewMessage =
   | { command: 'pickAndAddDirectory' }
   | { command: 'removeDirectory'; path: string }
   | { command: 'toggleHook'; event: string; groupIndex: number; hookIndex: number }
-  | { command: 'setSandboxEnabled'; enabled: boolean };
+  | { command: 'setSandboxEnabled'; enabled: boolean }
+  | { command: 'toggleMcpServer'; name: string };
 
 // ─── Inbound (extension → webview) ───────────────────────────────────────────
 export type ExtensionMessage =

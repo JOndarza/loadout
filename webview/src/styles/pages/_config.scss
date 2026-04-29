@@ -87,6 +87,28 @@ cm-config {
   padding: var(--sp-2) 0;
 }
 
+// ─── MCP Servers ─────────────────────────────────────────────────────────────
+.cm-cfg-mcp-name {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.cm-cfg-mcp-scope {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-full);
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06);
+
+  &[data-scope='user']    { color: var(--primary); background: rgba(var(--primary-rgb), 0.1); }
+  &[data-scope='project'] { color: var(--gold);    background: var(--gold-subtle); }
+}
+
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 .cm-cfg-hook-meta {
   display: flex;

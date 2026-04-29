@@ -104,6 +104,37 @@
     }
   </section>
 
+  <!-- ─── MCP Servers ─────────────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">MCP Servers</h2>
+      <p class="cm-set-p">Model Context Protocol servers from <code>~/.claude.json</code>. Project servers from <code>.mcp.json</code> are read-only.</p>
+    </header>
+
+    @if (state.mcpServers().length === 0) {
+      <p class="cm-set-hint cm-set-hint--padded">No MCP servers configured.</p>
+    } @else {
+      @for (server of state.mcpServers(); track server.name + server.scope) {
+        <div class="cm-set-row">
+          <div class="cm-cfg-hook-meta">
+            <span class="cm-cfg-mcp-name">{{ server.name }}</span>
+            <span class="cm-cfg-mcp-scope" [attr.data-scope]="server.scope">{{ server.scope }}</span>
+          </div>
+          <div class="cm-set-control">
+            <code class="cm-cfg-hook-cmd">{{ mcpDetail(server) }}</code>
+            @if (server.scope === 'user') {
+              <cm-toggle
+                [checked]="!server.disabled"
+                [ariaLabel]="(server.disabled ? 'Enable' : 'Disable') + ' ' + server.name"
+                (toggled)="toggleMcp(server)"
+              />
+            }
+          </div>
+        </div>
+      }
+    }
+  </section>
+
   <!-- ─── Sandbox ──────────────────────────────────────────────────── -->
   <section class="cm-set-section">
     <header class="cm-set-section-head">

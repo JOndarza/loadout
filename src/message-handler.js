@@ -19,12 +19,13 @@ const {
   addPermissionRule, removePermissionRule, addDirectory, removeDirectory,
   toggleHook, setSandboxEnabled,
 } = require('./claude-settings');
+const { toggleMcpServer } = require('./mcp-host');
 
 const NO_ROOT_OK = new Set([
   'ready', 'updateSettings', 'openExternal', 'revealCatalog', 'testRegistry',
   'updateClaudeSetting', 'openMemoryFile', 'addEnvVar', 'removeEnvVar',
   'addPermissionRule', 'removePermissionRule', 'pickAndAddDirectory', 'removeDirectory',
-  'toggleHook', 'setSandboxEnabled',
+  'toggleHook', 'setSandboxEnabled', 'toggleMcpServer',
 ]);
 
 function handleMessage(msg, refresh, postToWebview, root, storePath) {
@@ -379,6 +380,12 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
 
     case 'setSandboxEnabled':
       setSandboxEnabled(typeof msg.enabled === 'boolean' ? msg.enabled : null);
+      refresh();
+      break;
+
+    case 'toggleMcpServer':
+      if (typeof msg.name !== 'string') return;
+      toggleMcpServer(msg.name);
       refresh();
       break;
 

@@ -48,7 +48,7 @@ export class DataSyncService {
     this.profiles.setAll(data.profiles);
     this.catalog.setAll(data.catalogAgents, data.catalogSkills, data.catalogCommands ?? [], data.globalRoot);
     this.settings.setAll(data.settings);
-    this.claudeSettings.setAll(data.claudeSettings ?? {}, data.memoryFiles ?? []);
+    this.claudeSettings.setAll(data.claudeSettings ?? {}, data.memoryFiles ?? [], data.mcpServers ?? []);
 
     // Resolve active profile using Set comparison (handles filenames with commas, stable order)
     const activeAgents   = new Set(data.agents.filter((a) => a.active).map((a) => a.file));

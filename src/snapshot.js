@@ -4,6 +4,7 @@ const { detectVscodeThemeKind } = require('./theme');
 const { version: EXT_VERSION }  = require('../package.json');
 const { getClaudeSettings }     = require('./claude-settings');
 const { getMemoryFiles }        = require('./memory-files');
+const { getMcpServers }         = require('./mcp-host');
 
 function buildInitialData(root, storePath) {
   const globalRoot = getGlobalRoot();
@@ -23,6 +24,7 @@ function buildInitialData(root, storePath) {
     lastApplied:      getUiState(storePath).lastApplied ?? null,
     claudeSettings:   getClaudeSettings(),
     memoryFiles:      getMemoryFiles(root),
+    mcpServers:       getMcpServers(root),
   };
 }
 
