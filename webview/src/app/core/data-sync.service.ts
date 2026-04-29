@@ -25,6 +25,10 @@ export class DataSyncService {
 
   private readonly destroyRef = inject(DestroyRef);
 
+  refresh(): void {
+    this.bridge.send({ command: 'refresh' });
+  }
+
   init(): void {
     this.bridge.messages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((msg) => {
       if (msg.command === 'initialData' || msg.command === 'dataUpdate') {

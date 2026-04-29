@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CatalogState } from '@state/catalog.state';
 import { WorkspaceState } from '@state/workspace.state';
 import { TabFiltersState, type CatalogFilter } from '@state/tab-filters.state';
-import { VsCodeBridgeService } from '@core/vscode-bridge.service';
+import { CatalogBloc } from './catalog.bloc';
 import {
   CmButtonComponent,
   CmCardComponent,
@@ -12,7 +11,7 @@ import {
   CmTokenBarComponent,
   CopyToClipboardDirective,
 } from '@shared/primitives';
-import type { CatalogItem, ItemType, RegistryItem, WorkspaceItem } from '@core/messages';
+import type { CatalogItem, ItemType, WorkspaceItem } from '@core/messages';
 
 type FilterChip = CatalogFilter;
 
@@ -42,15 +41,15 @@ export class CatalogComponent {
   protected readonly state = inject(CatalogState);
   protected readonly workspace = inject(WorkspaceState);
   protected readonly filters = inject(TabFiltersState);
-  private readonly bridge = inject(VsCodeBridgeService);
+  private readonly bloc = inject(CatalogBloc);
 
   readonly searchQuery = input<string>('');
   protected readonly registryOpen = signal(false);
-  protected readonly registryItems = signal<RegistryItem[]>([]);
-  protected readonly registryLoading = signal(false);
-  protected readonly registryError = signal<string | null>(null);
-  protected readonly updateRunning = signal(false);
-  protected readonly updateResult = signal<{ updated: string[]; skipped: string[]; failed: string[] } | null>(null);
+  protected readonly registryItems = this.bloc.registryItems;
+  protected readonly registryLoading = this.bloc.registryLoading;
+  protected readonly registryError = this.bloc.registryError;
+  protected readonly updateRunning = this.bloc.updateRunning;
+  protected readonly updateResult = this.bloc.updateResult;
   protected readonly selected = signal<Set<string>>(new Set());
 
   protected readonly catalogRows = computed<CatalogRow[]>(() =>
@@ -121,21 +120,6 @@ export class CatalogComponent {
     return { all: rows.length, agents, skills, commands, updated, localOnly: this.localOnlyRows().length };
   });
 
-  constructor() {
-    this.bridge.messages$.pipe(takeUntilDestroyed()).subscribe((m) => {
-      if (m.command === 'registryStatus') {
-        this.registryLoading.set(false);
-        this.registryError.set(m.error ?? null);
-        this.registryItems.set(m.items ?? []);
-      } else if (m.command === 'updateStarted') {
-        this.updateRunning.set(true);
-      } else if (m.command === 'updateDone') {
-        this.updateRunning.set(false);
-        this.updateResult.set(m.result);
-      }
-    });
-  }
-
   protected setFilter(f: FilterChip): void {
     this.filters.patch('catalog', { filter: f });
     this.selected.set(new Set());
@@ -146,11 +130,11 @@ export class CatalogComponent {
   }
 
   protected pull(item: CatalogRow | LocalOnlyRow): void {
-    this.bridge.send({ command: 'addFromGlobal', itemType: item.type, file: item.file });
+    this.bloc.addFromGlobal(item.type, item.file);
   }
 
   protected pushLocal(item: CatalogRow | LocalOnlyRow): void {
-    this.bridge.send({ command: 'pushToGlobal', itemType: item.type, file: item.file });
+    this.bloc.pushToGlobal(item.type, item.file);
   }
 
   protected toggleSelect(item: CatalogRow): void {
@@ -170,7 +154,7 @@ export class CatalogComponent {
       .filter((i) => this.isSelected(i) && !i.inProject)
       .map((i) => ({ itemType: i.type, file: i.file }));
     if (!items.length) return;
-    this.bridge.send({ command: 'bulkAddFromGlobal', items });
+    this.bloc.bulkAddFromGlobal(items);
     this.selected.set(new Set());
   }
 
@@ -183,14 +167,10 @@ export class CatalogComponent {
   }
 
   protected checkRegistry(): void {
-    this.registryLoading.set(true);
-    this.registryError.set(null);
-    this.registryItems.set([]);
-    this.bridge.send({ command: 'checkRegistry' });
+    this.bloc.checkRegistry();
   }
 
   protected runUpdate(): void {
-    this.updateResult.set(null);
-    this.bridge.send({ command: 'runUpdate' });
+    this.bloc.runUpdate();
   }
 }

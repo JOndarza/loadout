@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ProfilesState, type ProfileEntry } from '@state/profiles.state';
 import { WorkspaceState } from '@state/workspace.state';
-import { VsCodeBridgeService } from '@core/vscode-bridge.service';
+import { ProfilesBloc } from './profiles.bloc';
 import type { PendingItems } from '@core/messages';
 import { CmButtonComponent, CmCardComponent, CmEmptyComponent } from '@shared/primitives';
-import { ApplyConfirmComponent, type ApplyDiff } from '@shared/overlays/apply-confirm.component';
-import { ImportProfileComponent, type ImportPreview } from '@shared/overlays/import-profile.component';
+import { ApplyConfirmComponent } from '@shared/overlays/apply-confirm.component';
+import { ImportProfileComponent } from '@shared/overlays/import-profile.component';
 
 @Component({
   selector: 'cm-profiles',
@@ -19,7 +18,7 @@ import { ImportProfileComponent, type ImportPreview } from '@shared/overlays/imp
 export class ProfilesComponent {
   protected readonly state = inject(ProfilesState);
   protected readonly workspace = inject(WorkspaceState);
-  private readonly bridge = inject(VsCodeBridgeService);
+  private readonly bloc = inject(ProfilesBloc);
 
   protected readonly newName = signal('');
   protected readonly editingName = signal<string | null>(null);
@@ -27,36 +26,13 @@ export class ProfilesComponent {
   protected readonly renameTo = signal<string>('');
   protected readonly renamingFrom = signal<string | null>(null);
 
-  // description editing
   protected readonly editingDescriptionFor = signal<string | null>(null);
   protected readonly descriptionDraft = signal('');
 
-  // diff modal (Task 4)
-  protected readonly pendingApply = signal<{ name: string; diff: ApplyDiff } | null>(null);
-
-  // import modal (Task 6)
-  protected readonly importPreview = signal<ImportPreview | null>(null);
+  protected readonly pendingApply = this.bloc.pendingApply;
+  protected readonly importPreview = this.bloc.importPreview;
 
   protected readonly entries = computed(() => this.state.entries());
-
-  constructor() {
-    this.bridge.messages$.pipe(takeUntilDestroyed()).subscribe((msg) => {
-      if (msg.command === 'applyProfilePreview') {
-        this.pendingApply.set({
-          name: msg.name,
-          diff: { willActivate: msg.willActivate, willDeactivate: msg.willDeactivate },
-        });
-      }
-      if (msg.command === 'profileImportPreview') {
-        this.importPreview.set({
-          originalName: msg.originalName,
-          profile: msg.profile,
-          found: msg.found,
-          missing: msg.missing,
-        });
-      }
-    });
-  }
 
   protected isActive(name: string): boolean {
     return this.state.activeName() === name;
@@ -88,27 +64,28 @@ export class ProfilesComponent {
   protected save(): void {
     const name = this.newName().trim();
     if (!name) return;
-    this.bridge.send({ command: 'saveProfile', name });
+    this.bloc.saveProfile(name);
     this.newName.set('');
   }
 
   protected requestApply(name: string): void {
-    this.bridge.send({ command: 'previewApplyProfile', name });
+    this.bloc.previewApply(name);
   }
 
   protected confirmApply(): void {
-    const p = this.pendingApply();
-    if (!p) return;
-    this.bridge.send({ command: 'applyProfile', name: p.name });
-    this.pendingApply.set(null);
+    this.bloc.confirmApply();
+  }
+
+  protected cancelApply(): void {
+    this.bloc.cancelApply();
   }
 
   protected restore(): void {
-    this.bridge.send({ command: 'applyProfile', name: '__restore_point__', silent: true });
+    this.bloc.restore();
   }
 
   protected remove(name: string): void {
-    this.bridge.send({ command: 'deleteProfile', name });
+    this.bloc.deleteProfile(name);
   }
 
   protected duplicate(from: string): void {
@@ -116,7 +93,7 @@ export class ProfilesComponent {
     let to = `${from} (copy)`;
     let n = 2;
     while (existing.has(to)) to = `${from} (copy ${n++})`;
-    this.bridge.send({ command: 'duplicateProfile', from, to });
+    this.bloc.duplicateProfile(from, to);
   }
 
   // ─── Description ────────────────────────────────────────────────────────────
@@ -127,25 +104,26 @@ export class ProfilesComponent {
   }
 
   protected saveDescription(name: string): void {
-    this.bridge.send({ command: 'updateProfileDescription', name, description: this.descriptionDraft() });
+    this.bloc.updateDescription(name, this.descriptionDraft());
     this.editingDescriptionFor.set(null);
   }
 
   // ─── Export / Import ────────────────────────────────────────────────────────
 
   protected exportProfile(name: string): void {
-    this.bridge.send({ command: 'exportProfile', name });
+    this.bloc.exportProfile(name);
   }
 
   protected startImport(): void {
-    this.bridge.send({ command: 'importProfileRequest' });
+    this.bloc.importProfileRequest();
   }
 
   protected confirmImport(event: { name: string; missing: PendingItems }): void {
-    const p = this.importPreview();
-    if (!p) return;
-    this.bridge.send({ command: 'importProfileConfirm', name: event.name, profile: p.profile, missing: event.missing });
-    this.importPreview.set(null);
+    this.bloc.importProfileConfirm(event.name, event.missing);
+  }
+
+  protected cancelImport(): void {
+    this.bloc.cancelImport();
   }
 
   // ─── Rename ─────────────────────────────────────────────────────────────────
@@ -159,7 +137,7 @@ export class ProfilesComponent {
     const from = this.renamingFrom();
     const to = this.renameTo().trim();
     if (from && to && from !== to) {
-      this.bridge.send({ command: 'renameProfile', from, to });
+      this.bloc.renameProfile(from, to);
     }
     this.renamingFrom.set(null);
     this.renameTo.set('');
@@ -224,13 +202,12 @@ export class ProfilesComponent {
     const name = this.editingName();
     const items = this.editingItems();
     if (!name || !items) return;
-    this.bridge.send({
-      command: 'updateProfileItems',
+    this.bloc.updateProfileItems(
       name,
-      agents:   Array.from(items.agents),
-      skills:   Array.from(items.skills),
-      commands: Array.from(items.commands),
-    });
+      Array.from(items.agents),
+      Array.from(items.skills),
+      Array.from(items.commands),
+    );
     this.cancelEdit();
   }
 
@@ -255,7 +232,7 @@ export class ProfilesComponent {
     const list = this.entries().slice();
     const [moved] = list.splice(this.dragFrom, 1);
     list.splice(idx, 0, moved);
-    this.bridge.send({ command: 'reorderProfiles', order: list.map((p) => p.name) });
+    this.bloc.reorderProfiles(list.map((p) => p.name));
     this.dragFrom = -1;
   }
 }

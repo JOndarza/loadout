@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DataSyncService } from '@core/data-sync.service';
-import { VsCodeBridgeService } from '@core/vscode-bridge.service';
+import { ProfilesBloc } from '@features/profiles/profiles.bloc';
 import { ProfilesState } from '@state/profiles.state';
 import { CatalogState } from '@state/catalog.state';
 import { WorkspaceState } from '@state/workspace.state';
@@ -40,7 +40,7 @@ type TabId = 'workspace' | 'profiles' | 'catalog' | 'settings';
 })
 export class ShellComponent {
   protected readonly sync = inject(DataSyncService);
-  private readonly bridge = inject(VsCodeBridgeService);
+  private readonly profilesBloc = inject(ProfilesBloc);
   protected readonly workspace = inject(WorkspaceState);
   protected readonly profiles = inject(ProfilesState);
   protected readonly catalog = inject(CatalogState);
@@ -74,7 +74,7 @@ export class ShellComponent {
       } else if (e.type === 'saveProfile') {
         // TODO: replace with inline prompt UI
         const name = window.prompt('Save as profile:')?.trim();
-        if (name) this.bridge.send({ command: 'saveProfile', name });
+        if (name) this.profilesBloc.saveProfile(name);
       }
     });
 

@@ -186,7 +186,7 @@
     [profileName]="pendingApply()!.name"
     [diff]="pendingApply()!.diff"
     (confirm)="confirmApply()"
-    (cancel)="pendingApply.set(null)"
+    (cancel)="cancelApply()"
   />
 }
 
@@ -194,6 +194,6 @@
   <cm-import-profile
     [preview]="importPreview()!"
     (confirm)="confirmImport($event)"
-    (cancel)="importPreview.set(null)"
+    (cancel)="cancelImport()"
   />
 }

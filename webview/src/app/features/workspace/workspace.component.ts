@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { VsCodeBridgeService } from '@core/vscode-bridge.service';
+import { WorkspaceBloc } from './workspace.bloc';
 import { WorkspaceState } from '@state/workspace.state';
 import { ProfilesState } from '@state/profiles.state';
 import { TabFiltersState, type WorkspaceKind } from '@state/tab-filters.state';
@@ -36,7 +36,7 @@ interface RowItem extends WorkspaceItem {
   templateUrl: './workspace.component.html',
 })
 export class WorkspaceComponent {
-  private readonly bridge = inject(VsCodeBridgeService);
+  private readonly bloc = inject(WorkspaceBloc);
   protected readonly state = inject(WorkspaceState);
   protected readonly filters = inject(TabFiltersState);
   private readonly profiles = inject(ProfilesState);
@@ -140,33 +140,28 @@ export class WorkspaceComponent {
   }
 
   protected toggle(item: RowItem): void {
-    this.bridge.send({
-      command: 'toggle',
-      type: item.type,
-      file: item.file,
-      wasActive: item.active,
-    });
+    this.bloc.toggle(item.type, item.file, item.active);
   }
 
   protected enableAllVisible(): void {
     const items = this.visibleItems()
       .filter((i) => !i.active)
       .map((i) => ({ type: i.type, file: i.file, wasActive: false as const }));
-    if (items.length) this.bridge.send({ command: 'bulkToggle', items });
+    if (items.length) this.bloc.bulkToggle(items);
   }
 
   protected disableAllVisible(): void {
     const items = this.visibleItems()
       .filter((i) => i.active)
       .map((i) => ({ type: i.type, file: i.file, wasActive: true as const }));
-    if (items.length) this.bridge.send({ command: 'bulkToggle', items });
+    if (items.length) this.bloc.bulkToggle(items);
   }
 
   protected bulkEnable(): void {
     const items = this.allItems()
       .filter((i) => this.selected().has(this.key(i)) && !i.active)
       .map((i) => ({ type: i.type, file: i.file, wasActive: false as const }));
-    if (items.length) this.bridge.send({ command: 'bulkToggle', items });
+    if (items.length) this.bloc.bulkToggle(items);
     this.clearSelection();
   }
 
@@ -174,7 +169,7 @@ export class WorkspaceComponent {
     const items = this.allItems()
       .filter((i) => this.selected().has(this.key(i)) && i.active)
       .map((i) => ({ type: i.type, file: i.file, wasActive: true as const }));
-    if (items.length) this.bridge.send({ command: 'bulkToggle', items });
+    if (items.length) this.bloc.bulkToggle(items);
     this.clearSelection();
   }
 }
