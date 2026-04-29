@@ -10,10 +10,15 @@
       (keydown.enter)="save()"
       aria-label="New loadout name"
     />
-    <cm-button variant="primary" size="md" (click)="save()">
-      Save loadout
-    </cm-button>
+    <cm-button variant="primary" size="md" (click)="save()">Save loadout</cm-button>
+    <cm-button variant="ghost" size="md" (click)="startImport()" title="Import profile from file">Import</cm-button>
   </div>
+
+  @if (state.hasRestorePoint()) {
+    <div class="cm-profiles-restore">
+      <cm-button variant="ghost" size="sm" (click)="restore()">↩ Restore previous state</cm-button>
+    </div>
+  }
 
   @if (entries().length === 0) {
     <cm-empty
@@ -57,8 +62,39 @@
                   @if (isActive(p.name)) {
                     <span class="cm-profiles-active-badge">● Active</span>
                   }
+                  @if (pendingCount(p) > 0) {
+                    <span class="cm-profiles-pending-badge" [title]="pendingCount(p) + ' items not yet in this workspace'">
+                      ⚠ {{ pendingCount(p) }} pending
+                    </span>
+                  }
                 </div>
               }
+
+              @if (editingDescriptionFor() === p.name) {
+                <input
+                  type="text"
+                  class="cm-profiles-desc-input"
+                  [ngModel]="descriptionDraft()"
+                  (ngModelChange)="descriptionDraft.set($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="Add a description…"
+                  (keydown.enter)="saveDescription(p.name)"
+                  (keydown.escape)="editingDescriptionFor.set(null)"
+                  (blur)="saveDescription(p.name)"
+                  aria-label="Profile description"
+                  autofocus
+                />
+              } @else {
+                <div
+                  class="cm-profiles-desc"
+                  [class.cm-profiles-desc--empty]="!p.description"
+                  (click)="startEditDescription(p.name, p.description)"
+                  title="Click to edit description"
+                >
+                  {{ p.description || 'Add a description…' }}
+                </div>
+              }
+
               <div class="cm-profiles-meta">
                 <strong>{{ p.agents.length }}</strong> agents ·
                 <strong>{{ p.skills.length }}</strong> skills ·
@@ -70,10 +106,11 @@
             <div class="cm-profiles-actions">
               <cm-button variant="ghost" size="sm" (click)="startEdit(p)" title="Edit items">✎</cm-button>
               <cm-button variant="ghost" size="sm" (click)="duplicate(p.name)" title="Duplicate">⎘</cm-button>
+              <cm-button variant="ghost" size="sm" (click)="exportProfile(p.name)" title="Export to file">↑</cm-button>
               <cm-button
                 variant="gold"
                 size="sm"
-                (click)="apply(p.name)"
+                (click)="requestApply(p.name)"
                 [disabled]="isActive(p.name)"
                 title="Apply"
               >
@@ -143,3 +180,20 @@
     </ul>
   }
 </div>
+
+@if (pendingApply()) {
+  <cm-apply-confirm
+    [profileName]="pendingApply()!.name"
+    [diff]="pendingApply()!.diff"
+    (confirm)="confirmApply()"
+    (cancel)="pendingApply.set(null)"
+  />
+}
+
+@if (importPreview()) {
+  <cm-import-profile
+    [preview]="importPreview()!"
+    (confirm)="confirmImport($event)"
+    (cancel)="importPreview.set(null)"
+  />
+}

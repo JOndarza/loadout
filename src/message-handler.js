@@ -1,8 +1,11 @@
 const vscode = require('vscode');
+const fs     = require('fs');
+const os     = require('os');
+const path   = require('path');
 const {
   getGlobalRoot, getItems, toggleItem, copyFromGlobal, pushToGlobal,
   getProfiles, saveProfiles, renameProfile, reorderProfiles,
-  updateProfileItems, duplicateProfile,
+  updateProfileItems, duplicateProfile, updateProfileDescription,
 } = require('../data');
 const { buildInitialData }                                                   = require('./snapshot');
 const { getSettings, saveSettings }                                          = require('./settings-host');
@@ -78,6 +81,15 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
       const profiles = getProfiles(storePath);
       const profile  = profiles[msg.name];
       if (!profile) return;
+      // snapshot current state so the user can undo the apply
+      profiles['__restore_point__'] = {
+        agents:    getItems(root, storePath, 'agents').filter(a => a.active).map(a => a.file),
+        skills:    getItems(root, storePath, 'skills').filter(s => s.active).map(s => s.file),
+        commands:  getItems(root, storePath, 'commands').filter(c => c.active).map(c => c.file),
+        createdAt: new Date().toISOString(),
+        order:     -1,
+      };
+      saveProfiles(storePath, profiles);
       for (const a of getItems(root, storePath, 'agents')) {
         if (a.active !== profile.agents.includes(a.file))
           toggleItem(root, storePath, 'agents', a.file, a.active);
@@ -172,6 +184,125 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
     case 'openExternal':
       if (isAllowedExternalUrl(msg.url)) vscode.env.openExternal(vscode.Uri.parse(msg.url));
       break;
+
+    case 'updateProfileDescription':
+      if (!isSafeName(msg.name) || typeof msg.description !== 'string') return;
+      updateProfileDescription(storePath, msg.name, msg.description);
+      refresh();
+      break;
+
+    case 'previewApplyProfile': {
+      if (!isSafeName(msg.name)) return;
+      const profiles = getProfiles(storePath);
+      const profile  = profiles[msg.name];
+      if (!profile) return;
+      const profileAgents   = new Set(profile.agents   ?? []);
+      const profileSkills   = new Set(profile.skills   ?? []);
+      const profileCommands = new Set(profile.commands ?? []);
+      const willActivate   = { agents: [], skills: [], commands: [] };
+      const willDeactivate = { agents: [], skills: [], commands: [] };
+      for (const a of getItems(root, storePath, 'agents')) {
+        if (!a.active && profileAgents.has(a.file))   willActivate.agents.push(a.file);
+        if (a.active  && !profileAgents.has(a.file))  willDeactivate.agents.push(a.file);
+      }
+      for (const s of getItems(root, storePath, 'skills')) {
+        if (!s.active && profileSkills.has(s.file))   willActivate.skills.push(s.file);
+        if (s.active  && !profileSkills.has(s.file))  willDeactivate.skills.push(s.file);
+      }
+      for (const c of getItems(root, storePath, 'commands')) {
+        if (!c.active && profileCommands.has(c.file))  willActivate.commands.push(c.file);
+        if (c.active  && !profileCommands.has(c.file)) willDeactivate.commands.push(c.file);
+      }
+      postToWebview({ command: 'applyProfilePreview', name: msg.name, willActivate, willDeactivate });
+      break;
+    }
+
+    case 'exportProfile': {
+      if (!isSafeName(msg.name)) return;
+      const profiles = getProfiles(storePath);
+      const profile  = profiles[msg.name];
+      if (!profile) return;
+      const payload = JSON.stringify({
+        name:        msg.name,
+        agents:      profile.agents      ?? [],
+        skills:      profile.skills      ?? [],
+        commands:    profile.commands    ?? [],
+        description: profile.description ?? '',
+        exportedAt:  new Date().toISOString(),
+      }, null, 2);
+      vscode.window.showSaveDialog({
+        defaultUri: vscode.Uri.file(path.join(os.homedir(), `${msg.name}.loadout.json`)),
+        filters: { 'Loadout profile': ['json'] },
+      }).then(uri => {
+        if (!uri) return;
+        fs.writeFileSync(uri.fsPath, payload, 'utf8');
+        vscode.window.showInformationMessage(`Profile "${msg.name}" exported`);
+      });
+      break;
+    }
+
+    case 'importProfileRequest': {
+      vscode.window.showOpenDialog({
+        canSelectFiles: true,
+        canSelectFolders: false,
+        canSelectMany: false,
+        filters: { 'Loadout profile': ['json'] },
+      }).then(uris => {
+        if (!uris || !uris[0]) return;
+        let parsed;
+        try { parsed = JSON.parse(fs.readFileSync(uris[0].fsPath, 'utf8')); }
+        catch { postToWebview({ command: 'notify', level: 'error', text: 'Invalid profile file' }); return; }
+        const agents   = Array.isArray(parsed.agents)   ? parsed.agents.filter(f => typeof f === 'string')   : [];
+        const skills   = Array.isArray(parsed.skills)   ? parsed.skills.filter(f => typeof f === 'string')   : [];
+        const commands = Array.isArray(parsed.commands) ? parsed.commands.filter(f => typeof f === 'string') : [];
+        const desc     = typeof parsed.description === 'string' ? parsed.description : '';
+        const allAgents   = new Set(getItems(root, storePath, 'agents').map(i => i.file));
+        const allSkills   = new Set(getItems(root, storePath, 'skills').map(i => i.file));
+        const allCommands = new Set(getItems(root, storePath, 'commands').map(i => i.file));
+        const found   = {
+          agents:   agents.filter(f => allAgents.has(f)),
+          skills:   skills.filter(f => allSkills.has(f)),
+          commands: commands.filter(f => allCommands.has(f)),
+        };
+        const missing = {
+          agents:   agents.filter(f => !allAgents.has(f)),
+          skills:   skills.filter(f => !allSkills.has(f)),
+          commands: commands.filter(f => !allCommands.has(f)),
+        };
+        postToWebview({ command: 'profileImportPreview', originalName: parsed.name ?? 'Imported', profile: { agents, skills, commands, description: desc }, found, missing });
+      });
+      break;
+    }
+
+    case 'importProfileConfirm': {
+      const name = msg.name?.trim();
+      if (!isSafeName(name)) return;
+      if (!Array.isArray(msg.profile?.agents) || !Array.isArray(msg.profile?.skills)) return;
+      const profiles = getProfiles(storePath);
+      const hasMissing = msg.missing && (msg.missing.agents?.length || msg.missing.skills?.length || msg.missing.commands?.length);
+      profiles[name] = {
+        agents:      msg.profile.agents,
+        skills:      msg.profile.skills,
+        commands:    msg.profile.commands ?? [],
+        description: msg.profile.description ?? '',
+        createdAt:   new Date().toISOString(),
+        order:       Object.keys(profiles).length,
+        ...(hasMissing ? { pendingItems: msg.missing } : {}),
+      };
+      saveProfiles(storePath, profiles);
+      refresh();
+      break;
+    }
+
+    case 'bulkAddFromGlobal': {
+      if (!Array.isArray(msg.items)) return;
+      for (const item of msg.items) {
+        if (!ALLOWED_ITEM_TYPES.has(item.itemType) || !isSafeName(item.file)) continue;
+        copyFromGlobal(getGlobalRoot(), root, item.itemType, item.file);
+      }
+      refresh();
+      break;
+    }
   }
 }
 

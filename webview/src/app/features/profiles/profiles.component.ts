@@ -1,19 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ProfilesState, type ProfileEntry } from '../../core/state/profiles.state';
-import { WorkspaceState } from '../../core/state/workspace.state';
-import { VsCodeBridgeService } from '../../core/vscode-bridge.service';
-import {
-  CmButtonComponent,
-  CmCardComponent,
-  CmEmptyComponent,
-} from '../../shared/primitives';
+import { ProfilesState, type ProfileEntry } from '@state/profiles.state';
+import { WorkspaceState } from '@state/workspace.state';
+import { VsCodeBridgeService } from '@core/vscode-bridge.service';
+import type { PendingItems } from '@core/messages';
+import { CmButtonComponent, CmCardComponent, CmEmptyComponent } from '@shared/primitives';
+import { ApplyConfirmComponent, type ApplyDiff } from '@shared/overlays/apply-confirm.component';
+import { ImportProfileComponent, type ImportPreview } from '@shared/overlays/import-profile.component';
 
 @Component({
   selector: 'cm-profiles',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, CmButtonComponent, CmCardComponent, CmEmptyComponent],
+  imports: [FormsModule, CmButtonComponent, CmCardComponent, CmEmptyComponent, ApplyConfirmComponent, ImportProfileComponent],
   templateUrl: './profiles.component.html',
 })
 export class ProfilesComponent {
@@ -27,10 +27,47 @@ export class ProfilesComponent {
   protected readonly renameTo = signal<string>('');
   protected readonly renamingFrom = signal<string | null>(null);
 
+  // description editing
+  protected readonly editingDescriptionFor = signal<string | null>(null);
+  protected readonly descriptionDraft = signal('');
+
+  // diff modal (Task 4)
+  protected readonly pendingApply = signal<{ name: string; diff: ApplyDiff } | null>(null);
+
+  // import modal (Task 6)
+  protected readonly importPreview = signal<ImportPreview | null>(null);
+
   protected readonly entries = computed(() => this.state.entries());
+
+  constructor() {
+    this.bridge.messages$.pipe(takeUntilDestroyed()).subscribe((msg) => {
+      if (msg.command === 'applyProfilePreview') {
+        this.pendingApply.set({
+          name: msg.name,
+          diff: { willActivate: msg.willActivate, willDeactivate: msg.willDeactivate },
+        });
+      }
+      if (msg.command === 'profileImportPreview') {
+        this.importPreview.set({
+          originalName: msg.originalName,
+          profile: msg.profile,
+          found: msg.found,
+          missing: msg.missing,
+        });
+      }
+    });
+  }
 
   protected isActive(name: string): boolean {
     return this.state.activeName() === name;
+  }
+
+  protected pendingCount(p: ProfileEntry): number {
+    return (
+      p.pendingItems.agents.length +
+      p.pendingItems.skills.length +
+      p.pendingItems.commands.length
+    );
   }
 
   protected formatDate(iso: string): string {
@@ -55,8 +92,19 @@ export class ProfilesComponent {
     this.newName.set('');
   }
 
-  protected apply(name: string): void {
-    this.bridge.send({ command: 'applyProfile', name, silent: true });
+  protected requestApply(name: string): void {
+    this.bridge.send({ command: 'previewApplyProfile', name });
+  }
+
+  protected confirmApply(): void {
+    const p = this.pendingApply();
+    if (!p) return;
+    this.bridge.send({ command: 'applyProfile', name: p.name });
+    this.pendingApply.set(null);
+  }
+
+  protected restore(): void {
+    this.bridge.send({ command: 'applyProfile', name: '__restore_point__', silent: true });
   }
 
   protected remove(name: string): void {
@@ -70,6 +118,37 @@ export class ProfilesComponent {
     while (existing.has(to)) to = `${from} (copy ${n++})`;
     this.bridge.send({ command: 'duplicateProfile', from, to });
   }
+
+  // ─── Description ────────────────────────────────────────────────────────────
+
+  protected startEditDescription(name: string, current: string): void {
+    this.editingDescriptionFor.set(name);
+    this.descriptionDraft.set(current);
+  }
+
+  protected saveDescription(name: string): void {
+    this.bridge.send({ command: 'updateProfileDescription', name, description: this.descriptionDraft() });
+    this.editingDescriptionFor.set(null);
+  }
+
+  // ─── Export / Import ────────────────────────────────────────────────────────
+
+  protected exportProfile(name: string): void {
+    this.bridge.send({ command: 'exportProfile', name });
+  }
+
+  protected startImport(): void {
+    this.bridge.send({ command: 'importProfileRequest' });
+  }
+
+  protected confirmImport(event: { name: string; missing: PendingItems }): void {
+    const p = this.importPreview();
+    if (!p) return;
+    this.bridge.send({ command: 'importProfileConfirm', name: event.name, profile: p.profile, missing: event.missing });
+    this.importPreview.set(null);
+  }
+
+  // ─── Rename ─────────────────────────────────────────────────────────────────
 
   protected startRename(name: string): void {
     this.renamingFrom.set(name);
@@ -90,6 +169,8 @@ export class ProfilesComponent {
     this.renamingFrom.set(null);
     this.renameTo.set('');
   }
+
+  // ─── Item editing ────────────────────────────────────────────────────────────
 
   protected startEdit(p: ProfileEntry): void {
     this.editingName.set(p.name);
@@ -158,7 +239,7 @@ export class ProfilesComponent {
     this.editingItems.set(null);
   }
 
-  // ─── Drag reorder ──────────────────────────────────────────────────────────
+  // ─── Drag reorder ────────────────────────────────────────────────────────────
   private dragFrom = -1;
 
   protected onDragStart(idx: number): void {

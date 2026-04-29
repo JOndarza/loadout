@@ -288,6 +288,13 @@ function duplicateProfile(storePath, from, to) {
   saveProfiles(storePath, profiles);
 }
 
+function updateProfileDescription(storePath, name, description) {
+  const profiles = getProfiles(storePath);
+  if (!profiles[name]) return;
+  profiles[name].description = String(description).slice(0, 500);
+  saveProfiles(storePath, profiles);
+}
+
 // ─── UI state ─────────────────────────────────────────────────────────────────
 function getUiState(storePath) {
   const p = path.join(storePath, UI_STATE_FILE);
@@ -308,7 +315,7 @@ module.exports = {
   getItems, toggleItem,
   copyFromGlobal,
   getProfiles, saveProfiles,
-  renameProfile, reorderProfiles, updateProfileItems, duplicateProfile,
+  renameProfile, reorderProfiles, updateProfileItems, duplicateProfile, updateProfileDescription,
   getUiState, saveUiState,
   pushToGlobal, getCatalogItems,
 };

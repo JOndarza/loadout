@@ -19,12 +19,20 @@ export interface CatalogItem {
   syncStatus: 'synced' | 'localModified' | 'sharedUpdated' | 'diverged' | null;
 }
 
+export interface PendingItems {
+  agents: string[];
+  skills: string[];
+  commands: string[];
+}
+
 export interface Profile {
   agents: string[];
   skills: string[];
   commands?: string[];
   createdAt: string;
   order?: number;
+  description?: string;
+  pendingItems?: PendingItems;
 }
 
 export interface Settings {
@@ -79,7 +87,13 @@ export type WebviewMessage =
   | { command: 'runUpdate' }
   | { command: 'refresh' }
   | { command: 'openExternal'; url: string }
-  | { command: 'bulkToggle'; items: Array<{ type: ItemType; file: string; wasActive: boolean }> };
+  | { command: 'bulkToggle'; items: Array<{ type: ItemType; file: string; wasActive: boolean }> }
+  | { command: 'updateProfileDescription'; name: string; description: string }
+  | { command: 'previewApplyProfile'; name: string }
+  | { command: 'exportProfile'; name: string }
+  | { command: 'importProfileRequest' }
+  | { command: 'importProfileConfirm'; name: string; profile: { agents: string[]; skills: string[]; commands: string[]; description: string }; missing: PendingItems }
+  | { command: 'bulkAddFromGlobal'; items: Array<{ itemType: ItemType; file: string }> };
 
 // ─── Inbound (extension → webview) ───────────────────────────────────────────
 export type ExtensionMessage =
@@ -90,4 +104,6 @@ export type ExtensionMessage =
   | { command: 'updateStarted' }
   | { command: 'updateDone'; result: { updated: string[]; skipped: string[]; failed: string[] } }
   | { command: 'testRegistryResult'; ok: boolean; status?: number; error?: string }
-  | { command: 'notify'; level: 'info' | 'warn' | 'error'; text: string };
+  | { command: 'notify'; level: 'info' | 'warn' | 'error'; text: string }
+  | { command: 'applyProfilePreview'; name: string; willActivate: PendingItems; willDeactivate: PendingItems }
+  | { command: 'profileImportPreview'; originalName: string; profile: { agents: string[]; skills: string[]; commands: string[]; description: string }; found: PendingItems; missing: PendingItems };
