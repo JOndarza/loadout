@@ -1,5 +1,5 @@
 import { Directive, HostListener, inject, input, output, signal } from '@angular/core';
-import { ToastService } from '../../core/toast.service';
+import { ToastService } from '@core/toast.service';
 
 @Directive({
   selector: '[cmCopy]',

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import type { CatalogItem } from '../../core/messages';
+import type { CatalogItem } from '@core/messages';
 
 @Component({
   selector: 'cm-sync-pill',

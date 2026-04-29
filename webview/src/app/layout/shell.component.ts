@@ -10,18 +10,18 @@ import {
   ElementRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DataSyncService } from '../core/data-sync.service';
-import { VsCodeBridgeService } from '../core/vscode-bridge.service';
-import { ProfilesState } from '../core/state/profiles.state';
-import { CatalogState } from '../core/state/catalog.state';
-import { WorkspaceState } from '../core/state/workspace.state';
-import { SettingsState } from '../core/state/settings.state';
-import { ShortcutsService } from '../core/shortcuts.service';
-import { WorkspaceComponent } from '../features/workspace/workspace.component';
-import { ProfilesComponent } from '../features/profiles/profiles.component';
-import { CatalogComponent } from '../features/catalog/catalog.component';
-import { SettingsComponent } from '../features/settings/settings.component';
-import { CommandPaletteComponent } from '../shared/overlays/command-palette.component';
+import { DataSyncService } from '@core/data-sync.service';
+import { VsCodeBridgeService } from '@core/vscode-bridge.service';
+import { ProfilesState } from '@state/profiles.state';
+import { CatalogState } from '@state/catalog.state';
+import { WorkspaceState } from '@state/workspace.state';
+import { SettingsState } from '@state/settings.state';
+import { ShortcutsService } from '@core/shortcuts.service';
+import { WorkspaceComponent } from '@features/workspace/workspace.component';
+import { ProfilesComponent } from '@features/profiles/profiles.component';
+import { CatalogComponent } from '@features/catalog/catalog.component';
+import { SettingsComponent } from '@features/settings/settings.component';
+import { CommandPaletteComponent } from '@shared/overlays/command-palette.component';
 
 type TabId = 'workspace' | 'profiles' | 'catalog' | 'settings';
 

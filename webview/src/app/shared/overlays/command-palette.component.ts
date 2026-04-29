@@ -10,11 +10,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ProfilesState } from '../../core/state/profiles.state';
-import { WorkspaceState } from '../../core/state/workspace.state';
-import { CatalogState } from '../../core/state/catalog.state';
-import { ShortcutsService } from '../../core/shortcuts.service';
-import { VsCodeBridgeService } from '../../core/vscode-bridge.service';
+import { ProfilesState } from '@state/profiles.state';
+import { WorkspaceState } from '@state/workspace.state';
+import { CatalogState } from '@state/catalog.state';
+import { ShortcutsService } from '@core/shortcuts.service';
+import { VsCodeBridgeService } from '@core/vscode-bridge.service';
 
 interface PaletteCommand {
   key: string;

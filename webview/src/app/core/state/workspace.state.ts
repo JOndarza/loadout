@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import type { WorkspaceItem } from '../messages';
+import type { WorkspaceItem } from '@core/messages';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceState {

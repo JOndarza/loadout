@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { SettingsState } from '../../core/state/settings.state';
-import { CatalogState } from '../../core/state/catalog.state';
-import { VsCodeBridgeService } from '../../core/vscode-bridge.service';
-import { DataSyncService } from '../../core/data-sync.service';
-import { ToastService } from '../../core/toast.service';
-import { ShortcutsService } from '../../core/shortcuts.service';
-import { CmButtonComponent } from '../../shared/primitives';
-import type { Settings } from '../../core/messages';
+import { SettingsState } from '@state/settings.state';
+import { CatalogState } from '@state/catalog.state';
+import { VsCodeBridgeService } from '@core/vscode-bridge.service';
+import { DataSyncService } from '@core/data-sync.service';
+import { ToastService } from '@core/toast.service';
+import { ShortcutsService } from '@core/shortcuts.service';
+import { CmButtonComponent } from '@shared/primitives';
+import type { Settings } from '@core/messages';
 
 @Component({
   selector: 'cm-settings',

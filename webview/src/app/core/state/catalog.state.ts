@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import type { CatalogItem } from '../messages';
+import type { CatalogItem } from '@core/messages';
 
 @Injectable({ providedIn: 'root' })
 export class CatalogState {
