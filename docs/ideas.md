@@ -7,66 +7,166 @@ Group related ideas and promote to a story in `backlog.md` when ready.
 
 ## Claude Code config surface
 
-Features sourced from Claude Code official docs — items stored in `~/.claude/` or `.claude/` that Loadout could manage beyond agents/skills/commands.
-
-### Fits well
-
-- **MCP Servers toggle** — servers live in `~/.claude.json → mcpServers` (user/local scope) and `.mcp.json` (project scope). New MCP tab listing servers per scope with enable/disable toggles; connection details (transport type, URL/command, env var names but not values) shown read-only. Profile snapshots include the active server list. No content editing.
-- **Hooks toggle** — hooks live in `settings.json → hooks` (any scope), keyed by event (`PreToolUse`, `PostToolUse`, `SessionStart`, etc.). Hooks section listing event name, matcher, type (command/http/mcp_tool), and command string. Toggle individual hooks active/inactive via a `disabled` flag — no deletion needed. A `disableAllHooks: true` master switch fits as a single toggle.
-- **Permissions rules** — `settings.json → permissions.allow`, `permissions.deny`, `permissions.ask`. Chip lists per array with an "Add rule" input pre-populated with common templates (`Bash(npm run *)`, `Read(.env)`, `WebFetch`). This is structured config editing, not document content editing.
-- **Session env vars** — `settings.json → env` (plain key-value JSON). Key list with masked values in the Settings tab. Per-profile env var sets would let developers switch between staging and production API targets by switching profiles.
-- **CLAUDE.md / rules file browser** — list all `~/.claude/CLAUDE.md`, `./CLAUDE.md`, `.claude/CLAUDE.md`, `CLAUDE.local.md`, and `.claude/rules/*.md` with scope labels (User / Project / Local). Each row shows path, scope, and an "Open in editor" button (extension host `openTextDocument`). Loadout does not edit content — it browses and launches. Rules files show their `paths:` glob as metadata.
-- **Auto-memory toggle + MEMORY.md viewer** — `settings.json → autoMemoryEnabled` toggle per scope, plus a read-only preview of the first few lines of `~/.claude/projects/<project>/memory/MEMORY.md` with an "Open folder" and "Clear memory" action.
-
-### Fits with caveats
+### Pending (not yet implemented)
 
 - **`.claude/rules/*.md` toggle** — same move-to-store pattern as agents/skills. Complication: rules files live in `.claude/rules/` and are semantically different from skills (always-on instructions vs. invokable skills). Needs a distinct section to avoid user confusion.
-- **Model + effort level** — `settings.json → model` and `effortLevel` dropdowns in the Settings tab. Per-profile model selection is the power feature (Haiku for fast-iteration, Opus for deep-review profiles). Caveat: available model list changes; Loadout would need to maintain or fetch aliases.
-- **`permissions.additionalDirectories`** — path list in the Permissions section with a folder-picker dialog. Caveat: paths are machine-specific and should be excluded from shared profile snapshots.
-- **Subagent memory scope badge** — parse the `memory:` frontmatter field already in agent files; display a badge on each agent card showing `user`/`project`/`local`/none scope. Add a "View memory" (open folder) and "Clear memory" (delete MEMORY.md) action. Small addition to the existing agent detail surface.
-- **Sandbox settings** — `settings.json → sandbox` object (~20 fields). Minimal version: just the `enabled` master toggle + read-only display of current allow/deny path rules. Full editor is medium-large scope and should show explicit confirmation dialogs to avoid accidental permission escalation.
-- **`.mcp.json` project-scoped MCP servers** — show in MCP tab with a "Project (shared)" scope label and a prominent warning that this file is version-controlled and edits are team-wide.
 
-## VSCode API integrations
-
-### Small (extension host only, no webview changes)
-
-- **LogOutputChannel** — `vscode.window.createOutputChannel('Loadout', { log: true })` in `activate()`. Logs every toggle, profile apply, hash-sync event, and migration step to the Output panel with timestamps and log-level filtering. Today silent failures (hash mismatch, missing file on apply) leave no diagnostic surface.
-- **Activity Bar badge** — store the `WebviewView` reference returned by `registerWebviewViewProvider` and set `.badge = { value: N, tooltip: 'N catalog updates available' }` after each hash-sync. Mirrors how Source Control shows uncommitted-change counts. Clears when the user opens the panel or resolves updates. Zero webview changes.
-- **Workspace trust declaration** — add `"capabilities": { "untrustedWorkspaces": { "supported": true } }` to `package.json`. Without it VSCode disables Loadout entirely in restricted-mode workspaces even though Loadout only touches `~/.claude/` (global, not workspace files). Two lines of JSON, zero code changes.
-- **Progress indicator** — wrap `applyProfile` and `runUpdate` (catalog hash sync) in `vscode.window.withProgress({ location: ProgressLocation.Window, title: 'Applying profile…' })`. Adds a status-bar spinner for the duration; today both operations complete with no host-side feedback.
-- **Explorer context menu** — `contributes.menus["explorer/context"]` with `"when": "resourceExtname == .md && resourcePath =~ /\\.claude/"`. Adds "Loadout: Adopt into Catalog" on right-click for agent/skill/command files in the Explorer, without opening the panel. Reuses the existing adopt logic in `data.js`.
-
-### Medium (extension host work)
-
-- **Tasks API** — register a `TaskProvider` in `src/task-provider.js` that reads `profiles.json` and exposes one `vscode.Task` (ShellExecution) per saved profile (e.g., "Loadout: Apply — coding-mode"). Tasks appear in "Run Task", can be bound to keyboard shortcuts, and can be chained from other build tasks. Refresh the provider after save/delete. Zero webview changes.
-- **File decorations** — `vscode.window.registerFileDecorationProvider` returning `{ badge: 'A'|'S'|'↑', tooltip }` for `.md` files under `~/.claude/`. Badge shows active/stored/update-available status in the Explorer at a glance without opening the panel. Requires firing `onDidChangeFileDecorations` after every toggle and sync.
-- **Walkthrough onboarding** — `contributes.walkthroughs` in `package.json` with 4 steps: open panel → toggle an item → save a profile → configure catalog path. Completes automatically via `onView` / `onCommand` events. Zero TS changes; only manifest + SVG illustrations + command registration for steps that currently only fire via `postMessage`.
-
-### Large (new surface required)
+### Large / future
 
 - **Custom editor** — `vscode.CustomEditorProvider` for `.md` files under `~/.claude/agents|skills|commands/`. Opens a structured form (name, description, model, tools) instead of raw markdown when the user opens an agent/skill file. Requires a second webview, frontmatter parsing, and two-way file sync. Effectively a second mini-app.
 
-## Quick wins
+## UX — Fast switch (core goal)
 
-- **Orphan filter keyboard shortcut** — wire `p` (or `n`) key in `ShortcutsService` to toggle the "not in profile" filter, mirroring how `a` toggles `activeOnly`. One-file change + one subscription in `workspace.component.ts`. Evidence: `shortcuts.service.ts` has no orphan shortcut.
-- **`CMD` type badge in workspace card** — the item card renders `AGT`/`SKL` but falls through to `SKL` for commands. Add a ternary branch for `CMD`. Evidence: `workspace.component.html:67`.
-- **"Clear restore point" button** — `__restore_point__` persists indefinitely; only another apply overwrites it. A "Clear" action sends a new `clearRestorePoint` message; extension host does `delete profiles[RESTORE_POINT_KEY]` + `saveProfiles` + `refresh`. Evidence: `profiles.component.html:17-21`.
-- **Cross-platform "Open folder" label** — `settings.component.html:96` hard-codes "Open in Finder". Should read "Open in Explorer" on Windows and a generic label on Linux, detected via `navigator.userAgent` (pattern already used in `shortcuts.service.ts:20`).
-- **Remove or wire `enableAll`/`disableAll` messages** — declared in `messages.ts:73-74` and in the protocol docs but never sent from the UI. Either add a "Enable all" bulk action or remove the dead message types.
+Everything in this section serves the same goal: switching profiles must be instant and frictionless — zero-click from the keyboard, minimum scanning, no confirmation interruptions.
 
-## Medium
+### Expand command palette to apply profiles without opening the panel
 
-- **Drag-and-drop visual affordance for profile reorder** — the backend (`reorderProfiles` in `data.js:261`, handler in `message-handler.js:125`) and Angular drag events (`onDragStart/Over/Drop` in `profiles.component.ts:245`) are fully wired. Only missing: SCSS drag handle cursor, ghost styling, and the `draggable` attribute on non-editing cards. Evidence: `roadmap.md` marks this as planned.
-- **"Adopt pending" action on profile card** — profile cards already show a warning badge when `pendingItems` is non-empty (`profiles.component.html:65-69`), but there is no action to resolve them. A button could fire `bulkAddFromGlobal` with `p.pendingItems` as the payload, then clear the field. `bulkAddFromGlobal` handler already exists at `message-handler.js:297`.
-- **`s` shortcut → focus name input** — `ShortcutsService` emits `{ type: 'saveProfile' }` on `s` (`shortcuts.service.ts:64`) but `profiles.component.ts` has no subscription for it; the Save button is the only trigger. Subscribe in the component and `viewChild`-focus the `cm-profiles-input` field.
-- **`skipRestorePoint` flag for palette apply** — rapid profile switching from `command-palette.component.ts:86` writes a `__restore_point__` on every apply, creating a noisy undo stack. A `skipRestorePoint?: boolean` on the `applyProfile` message + a one-line guard in `message-handler.js:84` would fix it.
-- **Vitest coverage for state services** — `WorkspaceState`, `ProfilesState`, `CatalogState`, `SettingsState` have zero tests. All are plain classes with `signal()`/`computed()`, testable without Angular TestBed. Explicitly listed in `roadmap.md:25`.
+The command palette (Cmd/Ctrl+K) currently lists profiles to switch. Extend it to also show agents/skills as toggleable commands and catalog items as adoptable commands — all in one `computed()` signal from current state. Result rows: icon + name + current state badge (Active / Inactive) + hint. Selecting a toggle command calls `bridge.send({ command: 'toggle', ... })` inline. No tab change, no scrolling, no mouse.
 
-## Larger
+Pain point: power users have no keyboard path to toggle a specific agent without mousing to the list.
+Complexity: medium. The palette already exists; adding item categories and their BLoC calls is the main work.
 
-- **File watcher on `.claude/`** — panel goes stale if the user manually drops files into `.claude/agents|skills|commands/` via Finder or another tool. Register a `vscode.workspace.createFileSystemWatcher` in `panel.js` to call `refresh()` on any add/change/delete. Pure extension-host change, no webview impact.
-- **Persist last-applied profile name** — `data-sync.service.ts:47-57` resolves `activeName` by comparing item sets; it goes `null` as soon as the user toggles one item after applying. Store `lastApplied` in `ui-state.json`, update it on `applyProfile`, and surface it in `InitialData` so the badge survives drift.
-- **VSCode command `loadout.applyProfile`** — register a command in `extension.js` that opens a `vscode.window.showQuickPick` populated from `getProfiles()`. Lets users switch loadouts from `Cmd+Shift+P` without opening the panel. Only two commands are registered today (`extension.js:15-33`).
-- **Profile `lastAppliedAt` + `appliedCount`** — add fields to the `Profile` schema (`messages.ts:28-36`) and increment them in the `applyProfile` handler. The profile card already has a meta row rendering `createdAt` (`profiles.component.html:98-103`) — the display slot exists.
+### Profile card — Apply is the only primary action; everything else in overflow
+
+Five buttons per card (Edit / Duplicate / Export / Apply / Delete) compete equally for attention. Apply is the action for 90% of visits. Move Edit, Duplicate, Export, Delete into a `⋯` (MoreHorizontal Lucide icon) CDK Menu overflow panel, leaving only Apply (gold) as the visible CTA. Card scanning becomes instant: eyes go directly to the name and Apply.
+
+Complexity: medium. `CdkMenuTrigger` + `CdkMenu` from `@angular/cdk/menu` handles keyboard nav, Escape, and focus return.
+
+### Replace Apply confirm modal with a bottom-sheet diff panel
+
+The current confirm modal blocks all interaction. Replace with a slide-up sheet anchored at the bottom of the panel (200–300px, `translateY` CSS animation). Shows: profile name + "Will activate (N) / Will deactivate (N)" chips + Cancel / Apply. The profile list stays visible behind it. ESC cancels. Faster visual flow, no jarring full-screen overlay.
+
+Complexity: medium. `@if (previewVisible())` block at root, CSS transition, `cdkTrapFocus`.
+
+### Delete profile — undo toast instead of no-confirmation
+
+No delete confirmation exists today. Add soft-delete: card disappears immediately (optimistic), a toast appears with a 5-second countdown progress bar and [Undo] button. If Undo is clicked, the card returns to its position. After 5 seconds, `deleteProfile` fires to the extension host. Removes accidental delete anxiety without a blocking modal.
+
+Complexity: medium. `deletePending` signal in the BLoC, cancellable `setTimeout`, countdown bar in the toast component.
+
+### Keyboard shortcuts: tab switching + quick apply
+
+| Action | Shortcut |
+|---|---|
+| Switch to Workspace | Ctrl+1 |
+| Switch to Profiles | Ctrl+2 |
+| Switch to Catalog | Ctrl+3 |
+| Apply focused profile | Ctrl+Enter (from Profiles tab) |
+| Toggle focused item | Space or Enter |
+| Dismiss any overlay | Escape |
+
+Shortcut hints appear as `kbd` elements in tooltips and command palette result rows — passive discovery, no docs page needed.
+Complexity: low. One subscription per shortcut in `ShortcutsService`.
+
+### Fuzzy search with match highlighting (uFuzzy)
+
+Replace substring-only search with `@leeoniya/ufuzzy` (4 KB bundle, returns range indices for each match). Render highlights as `<span class="search-match">` template segments — no `[innerHTML]` / `SafeHtml` needed, safe under the existing strict CSP.
+
+Also: parse filter tokens directly in the search box (`type:agent`, `active:true`, `tok>500`) so power users can compose a query in one gesture instead of clicking filter chips. Active token-filters appear as dismissable chips in the toolbar.
+
+Pain point: current search is substring-only and highlights nothing. A user typing `"cde"` won't find `"code-explainer"`.
+Complexity: low. One `npm install @leeoniya/ufuzzy`; a pipe for segment splitting; a regex parser in the search state service.
+
+## UX — Progressive disclosure and information density
+
+Ideas that reduce clutter so the switch path stays clear.
+
+### Profile card — hover to reveal metadata
+
+Always visible: name, active badge, item counts (agents/skills/commands), Apply, ⋯.
+On CSS `:hover`: description, created date, applied count.
+On explicit card body click (expand signal): full agent/skill chip list.
+
+Pain point: every card shows counts + date + applied count + 5 buttons at rest, creating visual noise that slows profile scanning.
+Complexity: low. CSS `:hover` + one `signal<boolean>` per card + `@if (expanded())` block.
+
+### Status strip → move into Workspace tab header
+
+The always-visible strip (`X/Y agents · A/B skills · ~N tok · ~$0.0X/req`) occupies one full band of persistent chrome above the tabs. Move it into a sub-header that only renders when the Workspace tab is active. Reduces vertical stacking: header → tabs → content. Four competing horizontal bands collapse to three.
+
+Complexity: low. `@if (activeTab() === 'workspace')` wrapper around the strip.
+
+### Token budget bar
+
+Replace the static `~N tok` text with a thin filled bar below it. Three color zones via VSCode CSS variables: green (0–70%), amber (70–90%), red (90%+). Fill = `totalTokens / configuredBudget * 100%`. A tooltip shows the raw number. Configurable budget stored in Settings (default 50,000).
+
+Pain point: `~$0.04/req` is meaningless without knowing session volume. A bar provides immediate directional signal (loading too many heavy agents).
+Complexity: low. One `computed` signal for percentage; one CSS `width` binding.
+
+### First-run inline checklist (empty state onboarding)
+
+When `agents.length === 0 && skills.length === 0`, render a 3-step checklist instead of a blank list:
+1. "Add your first agent from the Catalog tab →" (click switches tab)
+2. "Toggle at least one item Active"
+3. "Save as a Profile — one click to restore anytime"
+
+Steps auto-check on completion. State persisted in `ui-state.json`. Disappears after all steps are done. A dismiss link is available from step 1.
+
+Pain point: new users see a blank list with no guidance on where to start.
+Complexity: low. Signal-tracked `onboardingStep` in `ui-state.json`.
+
+### Right-click context menu on item rows
+
+`(contextmenu)` on workspace and catalog rows; a `ContextMenuService` opens a CDK `GlobalPositionStrategy` overlay at cursor position. Closes on next click or Escape. Items:
+
+- Workspace row: Toggle / Copy name / Find in Catalog / Add to current profile
+- Profile card: Apply / Duplicate / Export / Delete
+- Catalog row: Adopt / Copy name
+
+Pain point: common actions require navigating to different tabs or mousing to small buttons.
+Complexity: medium. One `ContextMenuService` + one positioned overlay component.
+
+### Registry items surfaced inline in Catalog
+
+The Registry feature (sync from `aitmpl.com`) is hidden behind a collapsible section that most users won't discover. After the locally-adopted list, add a visual separator and an "N more available in Registry" row. Expanding it (CDK Accordion) shows unadopted registry items with an Adopt button — no separate button or section needed. An `Available (N)` chip appears in the filter bar when registry items are present and unadopted.
+
+Pain point: the Registry is a discoverability dead end. Many users will never know it exists.
+Complexity: medium. `registryStatus` result is already received; a `computed()` of unadopted items + accordion expand.
+
+## UX / Angular CDK
+
+Angular CDK is not yet installed (`npm install @angular/cdk` inside `webview/`). Critical prerequisite: wire `CSP_NONCE` in `main.ts` — without it every CDK module that injects inline styles (drag-drop animations, overlays, virtual scroll) fails silently under the existing strict nonce-based CSP.
+
+### No-CDK quick wins
+
+- **Optimistic toggle** — today `toggle` waits for `dataUpdate` before updating the UI; flip state locally via signals immediately and let the host reconcile on `dataUpdate`. Eliminates the 50–200ms lag on every click.
+- **Skeleton loader** — shimmer CSS (`gradient` + `animation`) behind an `@if (loaded())` gate while `initialData` arrives. No extra library.
+- **Row hover states** — `--vscode-list-hoverBackground` and `--vscode-focusBorder` are already injected by VSCode into the webview. Add `transition: background-color 120ms ease` on `.item-card`.
+- **Inline profile rename (double-click)** — `editing` signal + `<input>` with `(blur)`, `(keydown.enter)`, `(keydown.escape)`. `renameProfile` already exists in `messages.ts`.
+- **Last-applied timestamp on profile card** — `lastAppliedAt` and `appliedCount` already exist in `messages.ts`; only rendering is missing. The `createdAt` display slot in `profiles.component.html:98-103` is the template to follow.
+
+### CDK Collections — SelectionModel + bulk toolbar
+
+- **`SelectionModel<T>`** from `@angular/cdk/collections` replaces the current `Set<string>` used for `selected` in workspace and catalog. Exposes `selection.changed` as an Observable → `toSignal()` to drive the bulk toolbar.
+- **Bulk action toolbar** — appears only when `hasSelection()` is true; "Activate all / Deactivate all / Clear" buttons. `bulkToggle` already exists in `messages.ts`.
+- **Shift-click range select** + a **checkbox column** as a visual affordance that multi-select mode is active.
+- **`FocusKeyManager`** from `@angular/cdk/a11y` for arrow-key navigation + Space to toggle + Shift+Arrow for range selection.
+
+### CDK Drag-Drop — profile reorder and catalog transfer
+
+- **Profile drag-to-reorder** — `cdkDropList` + `cdkDrag` + `CdkDragHandle` (grip icon). `reorderProfiles` is already wired in `messages.ts` and `data.js:261`. Missing: SCSS drag-handle cursor, ghost styling, and the `draggable` attribute on non-editing cards. Already marked as planned in `roadmap.md`.
+- **Catalog → Workspace drag (copy semantics)** — source list with `cdkDropListSortingDisabled` + `cdkDropListHasAnchor`; destination with `cdkDropListEnterPredicate` to reject duplicates. `addFromGlobal` already exists. Use `copyArrayItem()` so the catalog item stays in place. The `.cdk-drop-list-anchor` outline left behind reinforces "copy, not move."
+- **`.cdk-drop-list-receiving` drop-zone highlight** — dashed border using `--vscode-focusBorder` auto-applied by CDK when an item is hovering over the workspace list.
+- **Gotcha**: CDK drag-drop has no built-in keyboard support (GitHub issue #25468, open since 2022). Keep Up/Down arrow buttons as a keyboard alternative. Use `previewContainer: 'global'` to avoid clipping inside `overflow: hidden` scroll panels.
+
+### CDK Overlay — apply preview diff
+
+- **`cdkConnectedOverlay`** on the Apply button in profiles — hover shows a panel with `willActivate` / `willDeactivate` item counts. `previewApplyProfile` already exists in `messages.ts`.
+
+### CDK Virtual Scroll — catalog tab
+
+- **`CdkVirtualScrollViewport`** with a fixed `itemSize` (px) on the Catalog tab for large item lists. Viewport needs a fixed CSS height (not `auto`). Enforce fixed-height catalog cards (2-line description truncation) to avoid scroll-position jitter.
+
+### CDK Accordion — expandable item details
+
+- **`cdkAccordionItem`** to expand cards revealing token count, full description, and sync status. CSS `max-height` + `overflow: hidden` transition — no JavaScript animation needed.
+
+### Accessibility
+
+- **`LiveAnnouncer`** — `announce('Agent X activated', 'polite')` after every toggle and profile apply. Screen-reader feedback without moving focus.
+- **`FocusMonitor`** — show focus rings only during keyboard navigation, not on mouse click. Matches native VSCode panel behavior.
+- **`role="switch"` + `aria-checked`** on toggle buttons — correct ARIA pattern for binary on/off switches.
+
+## Platform
+
 - **Storybook for shared primitives** — `cm-card`, `cm-toggle`, `cm-button`, `cm-token-bar`, `cm-segmented`, `cm-sync-pill`, `cm-empty` are all standalone `OnPush` input-driven components — ideal Storybook candidates. Largest cost is `@storybook/angular` toolchain setup, not the stories themselves. Listed in `roadmap.md:27`.
