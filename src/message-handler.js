@@ -12,6 +12,7 @@ const { getSettings, saveSettings }                                          = r
 const { DEFAULT_REGISTRY_URL }                                               = require('./constants');
 const { ALLOWED_ITEM_TYPES, isSafeName, isSafeArray, isAllowedExternalUrl } = require('./validators');
 const { checkRegistryStatus, runUpdateScript, parseUpdateOutput }            = require('./registry');
+const { log }                                                                = require('./logger');
 
 const NO_ROOT_OK = new Set(['ready', 'updateSettings', 'openExternal', 'revealCatalog', 'testRegistry']);
 
@@ -81,6 +82,7 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
       const profiles = getProfiles(storePath);
       const profile  = profiles[msg.name];
       if (!profile) return;
+      log.info(`Applying profile "${msg.name}"`);
       if (!msg.skipRestorePoint) {
         profiles['__restore_point__'] = {
           agents:    getItems(root, storePath, 'agents').filter(a => a.active).map(a => a.file),
@@ -104,7 +106,10 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
           toggleItem(root, storePath, 'commands', c.file, c.active);
       }
       refresh();
-      if (!msg.silent) vscode.window.showInformationMessage(`Loadout "${msg.name}" applied`);
+      if (!msg.silent) vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Window, title: `Loadout "${msg.name}" applied` },
+        () => new Promise((res) => setTimeout(res, 1200)),
+      );
       break;
     }
 
@@ -172,14 +177,21 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
 
     case 'runUpdate':
       postToWebview({ command: 'updateStarted' });
-      runUpdateScript(root).then(({ code, out }) => {
-        const result = parseUpdateOutput(out);
-        if (code !== 0 && result.updated.length === 0 && result.skipped.length === 0 && result.failed.length === 0) {
-          result.failed.push('Script error — check extension logs');
-        }
-        postToWebview({ command: 'updateDone', result });
-        if (result.updated.length > 0) refresh();
-      });
+      log.info('Running catalog update');
+      vscode.window.withProgress(
+        { location: vscode.ProgressLocation.Window, title: 'Updating catalog…', cancellable: false },
+        () => runUpdateScript(root).then(({ code, out }) => {
+          const result = parseUpdateOutput(out);
+          if (code !== 0 && result.updated.length === 0 && result.skipped.length === 0 && result.failed.length === 0) {
+            result.failed.push('Script error — check extension logs');
+            log.error('Catalog update script exited with error');
+          } else {
+            log.info(`Catalog update done — updated: ${result.updated.length}, skipped: ${result.skipped.length}, failed: ${result.failed.length}`);
+          }
+          postToWebview({ command: 'updateDone', result });
+          if (result.updated.length > 0) refresh();
+        }),
+      );
       break;
 
     case 'openExternal':
