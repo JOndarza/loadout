@@ -2,8 +2,8 @@
   <div class="cm-ws-toolbar">
     <cm-segmented
       [options]="kindOptions()"
-      [value]="kind()"
-      (valueChange)="kind.set($any($event))"
+      [value]="filters.workspace().kind"
+      (valueChange)="setKind($any($event))"
       ariaLabel="Filter by kind"
     />
 
@@ -12,8 +12,8 @@
     <button
       type="button"
       class="cm-ws-chip"
-      [class.is-on]="activeOnly()"
-      (click)="activeOnly.set(!activeOnly())"
+      [class.is-on]="filters.workspace().activeOnly"
+      (click)="toggleActive()"
       title="Show only active items"
     >
       <span class="cm-ws-chip-dot"></span>
@@ -23,12 +23,23 @@
     <button
       type="button"
       class="cm-ws-chip"
-      [class.is-on]="heavyOnly()"
-      (click)="heavyOnly.set(!heavyOnly())"
+      [class.is-on]="filters.workspace().heavyOnly"
+      (click)="toggleHeavy()"
       title="Show items over 1k tokens"
     >
       <span class="cm-ws-chip-dot"></span>
       Heavy
+    </button>
+
+    <button
+      type="button"
+      class="cm-ws-chip"
+      [class.is-on]="orphanOnly()"
+      (click)="toggleNotInProfile()"
+      title="Show items not referenced by any saved profile"
+    >
+      <span class="cm-ws-chip-dot"></span>
+      Not in profile
     </button>
   </div>
 
@@ -36,7 +47,7 @@
     <cm-empty
       title="Nothing to show"
       [description]="
-        searchQuery() || activeOnly() || heavyOnly()
+        searchQuery() || filters.workspace().activeOnly || filters.workspace().heavyOnly
           ? 'No items match the current filters.'
           : 'Add files to .claude/agents/ or .claude/skills/ to start using Loadout.'
       "

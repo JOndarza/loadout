@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CatalogState } from '../../core/state/catalog.state';
-import { WorkspaceState } from '../../core/state/workspace.state';
-import { VsCodeBridgeService } from '../../core/vscode-bridge.service';
+import { CatalogState } from '@state/catalog.state';
+import { WorkspaceState } from '@state/workspace.state';
+import { TabFiltersState, type CatalogFilter } from '@state/tab-filters.state';
+import { VsCodeBridgeService } from '@core/vscode-bridge.service';
 import {
   CmButtonComponent,
   CmCardComponent,
@@ -10,10 +11,10 @@ import {
   CmSyncPillComponent,
   CmTokenBarComponent,
   CopyToClipboardDirective,
-} from '../../shared/primitives';
-import type { CatalogItem, ItemType, RegistryItem, WorkspaceItem } from '../../core/messages';
+} from '@shared/primitives';
+import type { CatalogItem, ItemType, RegistryItem, WorkspaceItem } from '@core/messages';
 
-type FilterChip = 'all' | ItemType | 'updated' | 'local-only';
+type FilterChip = CatalogFilter;
 
 interface CatalogRow extends CatalogItem {
   type: ItemType;
@@ -40,11 +41,10 @@ interface LocalOnlyRow extends WorkspaceItem {
 export class CatalogComponent {
   protected readonly state = inject(CatalogState);
   protected readonly workspace = inject(WorkspaceState);
+  protected readonly filters = inject(TabFiltersState);
   private readonly bridge = inject(VsCodeBridgeService);
 
   readonly searchQuery = input<string>('');
-
-  protected readonly filter = signal<FilterChip>('all');
   protected readonly registryOpen = signal(false);
   protected readonly registryItems = signal<RegistryItem[]>([]);
   protected readonly registryLoading = signal(false);
@@ -72,7 +72,7 @@ export class CatalogComponent {
   });
 
   protected readonly visibleCatalog = computed<CatalogRow[]>(() => {
-    const f = this.filter();
+    const f = this.filters.catalog().filter;
     const q = this.searchQuery().toLowerCase().trim();
     let rows = this.catalogRows();
 
@@ -98,7 +98,7 @@ export class CatalogComponent {
   });
 
   protected readonly visibleLocalOnly = computed<LocalOnlyRow[]>(() => {
-    if (this.filter() !== 'local-only') return [];
+    if (this.filters.catalog().filter !== 'local-only') return [];
     const q = this.searchQuery().toLowerCase().trim();
     let rows = this.localOnlyRows();
     if (q) {
@@ -137,7 +137,7 @@ export class CatalogComponent {
   }
 
   protected setFilter(f: FilterChip): void {
-    this.filter.set(f);
+    this.filters.patch('catalog', { filter: f });
     this.selected.set(new Set());
   }
 
@@ -166,10 +166,11 @@ export class CatalogComponent {
   }
 
   protected bulkAdopt(): void {
-    const items = this.visibleCatalog().filter((i) => this.isSelected(i) && !i.inProject);
-    for (const it of items) {
-      this.bridge.send({ command: 'addFromGlobal', itemType: it.type, file: it.file });
-    }
+    const items = this.visibleCatalog()
+      .filter((i) => this.isSelected(i) && !i.inProject)
+      .map((i) => ({ itemType: i.type, file: i.file }));
+    if (!items.length) return;
+    this.bridge.send({ command: 'bulkAddFromGlobal', items });
     this.selected.set(new Set());
   }
 

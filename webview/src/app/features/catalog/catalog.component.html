@@ -16,7 +16,7 @@
     <button
       type="button"
       class="cm-cat-chip"
-      [class.is-on]="filter() === 'all'"
+      [class.is-on]="filters.catalog().filter === 'all'"
       (click)="setFilter('all')"
     >
       All <span class="cm-cat-chip-count">{{ counts().all }}</span>
@@ -24,7 +24,7 @@
     <button
       type="button"
       class="cm-cat-chip"
-      [class.is-on]="filter() === 'agents'"
+      [class.is-on]="filters.catalog().filter === 'agents'"
       (click)="setFilter('agents')"
     >
       Agents <span class="cm-cat-chip-count">{{ counts().agents }}</span>
@@ -32,7 +32,7 @@
     <button
       type="button"
       class="cm-cat-chip"
-      [class.is-on]="filter() === 'skills'"
+      [class.is-on]="filters.catalog().filter === 'skills'"
       (click)="setFilter('skills')"
     >
       Skills <span class="cm-cat-chip-count">{{ counts().skills }}</span>
@@ -41,7 +41,7 @@
       <button
         type="button"
         class="cm-cat-chip"
-        [class.is-on]="filter() === 'commands'"
+        [class.is-on]="filters.catalog().filter === 'commands'"
         (click)="setFilter('commands')"
       >
         Commands <span class="cm-cat-chip-count">{{ counts().commands }}</span>
@@ -51,7 +51,7 @@
       <button
         type="button"
         class="cm-cat-chip cm-cat-chip--gold"
-        [class.is-on]="filter() === 'updated'"
+        [class.is-on]="filters.catalog().filter === 'updated'"
         (click)="setFilter('updated')"
       >
         Updates <span class="cm-cat-chip-count">{{ counts().updated }}</span>
@@ -61,7 +61,7 @@
       <button
         type="button"
         class="cm-cat-chip cm-cat-chip--info"
-        [class.is-on]="filter() === 'local-only'"
+        [class.is-on]="filters.catalog().filter === 'local-only'"
         (click)="setFilter('local-only')"
       >
         Local only <span class="cm-cat-chip-count">{{ counts().localOnly }}</span>
@@ -69,7 +69,7 @@
     }
   </div>
 
-  @if (filter() === 'local-only') {
+  @if (filters.catalog().filter === 'local-only') {
     @if (visibleLocalOnly().length === 0) {
       <cm-empty
         icon="✓"

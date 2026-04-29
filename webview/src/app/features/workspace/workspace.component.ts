@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { VsCodeBridgeService } from '../../core/vscode-bridge.service';
-import { WorkspaceState } from '../../core/state/workspace.state';
+import { VsCodeBridgeService } from '@core/vscode-bridge.service';
+import { WorkspaceState } from '@state/workspace.state';
+import { ProfilesState } from '@state/profiles.state';
+import { TabFiltersState, type WorkspaceKind } from '@state/tab-filters.state';
 import {
   CmButtonComponent,
   CmCardComponent,
@@ -10,10 +12,10 @@ import {
   CmToggleComponent,
   CopyToClipboardDirective,
   type SegmentedOption,
-} from '../../shared/primitives';
-import type { ItemType, WorkspaceItem } from '../../core/messages';
+} from '@shared/primitives';
+import type { ItemType, WorkspaceItem } from '@core/messages';
 
-type ItemKind = 'all' | ItemType;
+type ItemKind = WorkspaceKind;
 interface RowItem extends WorkspaceItem {
   type: ItemType;
 }
@@ -36,19 +38,19 @@ interface RowItem extends WorkspaceItem {
 export class WorkspaceComponent {
   private readonly bridge = inject(VsCodeBridgeService);
   protected readonly state = inject(WorkspaceState);
+  protected readonly filters = inject(TabFiltersState);
+  private readonly profiles = inject(ProfilesState);
 
   readonly searchQuery = input<string>('');
 
-  protected readonly kind = signal<ItemKind>('all');
-  protected readonly activeOnly = signal(false);
-  protected readonly heavyOnly = signal(false);
+  protected readonly orphanOnly = signal(false);
   protected readonly selected = signal<Set<string>>(new Set());
   private lastClickedKey = '';
 
   protected readonly kindOptions = computed<SegmentedOption<ItemKind>[]>(() => [
-    { value: 'all',      label: 'All',      count: this.state.totalCount() },
-    { value: 'agents',   label: 'Agents',   count: this.state.agents().length },
-    { value: 'skills',   label: 'Skills',   count: this.state.skills().length },
+    { value: 'all', label: 'All', count: this.state.totalCount() },
+    { value: 'agents', label: 'Agents', count: this.state.agents().length },
+    { value: 'skills', label: 'Skills', count: this.state.skills().length },
     { value: 'commands', label: 'Commands', count: this.state.commands().length },
   ]);
 
@@ -61,14 +63,14 @@ export class WorkspaceComponent {
 
   protected readonly visibleItems = computed<RowItem[]>(() => {
     const q = this.searchQuery().toLowerCase().trim();
-    const k = this.kind();
-    const activeOnly = this.activeOnly();
-    const heavyOnly = this.heavyOnly();
+    const { kind, activeOnly, heavyOnly } = this.filters.workspace();
+    const inAnyProfile = this.orphanOnly() ? this.profiles.allProfileItemFiles() : null;
 
     return this.allItems().filter((it) => {
-      if (k !== 'all' && it.type !== k) return false;
+      if (kind !== 'all' && it.type !== kind) return false;
       if (activeOnly && !it.active) return false;
       if (heavyOnly && it.tokens <= 1000) return false;
+      if (inAnyProfile && inAnyProfile.has(it.file)) return false;
       if (q) {
         const haystack = `${it.name} ${it.description} ${it.file}`.toLowerCase();
         if (!haystack.includes(q)) return false;
@@ -76,6 +78,22 @@ export class WorkspaceComponent {
       return true;
     });
   });
+
+  protected setKind(v: ItemKind): void {
+    this.filters.patch('workspace', { kind: v });
+  }
+
+  protected toggleActive(): void {
+    this.filters.patch('workspace', { activeOnly: !this.filters.workspace().activeOnly });
+  }
+
+  protected toggleHeavy(): void {
+    this.filters.patch('workspace', { heavyOnly: !this.filters.workspace().heavyOnly });
+  }
+
+  protected toggleNotInProfile(): void {
+    this.orphanOnly.update((v) => !v);
+  }
 
   protected key(item: RowItem): string {
     return `${item.type}:${item.file}`;
