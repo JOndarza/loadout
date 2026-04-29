@@ -7,10 +7,10 @@ webview/dist/
 webview/coverage/
 webview/storybook-static/
 
-.claude/*
-!.claude/skills
 .claire/
+.claude/*
 webview-dist/
+
 
 # OS
 .DS_Store
@@ -23,3 +23,10 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Excludes
+!.claude/rules/
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/docs-architect/
+!.claude/skills/loadout-system-design/

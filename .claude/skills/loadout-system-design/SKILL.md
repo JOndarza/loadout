@@ -7,7 +7,8 @@ description: >
   two-process architecture (Extension Host Node.js + Angular 21 Webview), postMessage
   protocol, data.js filesystem layer, signal-based state services, storage layout, and
   non-negotiable coding rules. Invoke when implementing stories, adding features,
-  reviewing code, or when any system design question arises in Loadout.
+  reviewing code, making ANY UI/styling change (design tokens, SCSS, components,
+  animations), or when any system design question arises in Loadout.
 ---
 
 # Loadout — System Design Reference
