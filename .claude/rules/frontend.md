@@ -12,7 +12,8 @@ paths:
 - **Components**: standalone only, `OnPush` change detection mandatory
 - **Signals**: `input()` / `output()` for I/O; `signal()` / `computed()` for local reactive state; prefer over Subjects
 - **State**: dumb components — state lives in `core/state/*.state.ts` services, not in components; components inject and read signals only
-- **Bridge**: `VsCodeBridgeService` is the **only** channel to the extension host; call `send()` for actions, subscribe to `messages$` for inbound data
+- **BLoC layer**: each feature has a `*.bloc.ts` service (`@Injectable({ providedIn: 'root' })`) that owns all `bridge.send()` calls and inbound `messages$` subscriptions for that feature; components inject the BLoC, never `VsCodeBridgeService` directly
+- **Bridge**: `VsCodeBridgeService` is the channel to the extension host — BLoCs and core infrastructure (`DataSyncService`, `ThemeService`) are the only callers; never inject it in components or overlays
 - **Icons**: `lucide-angular` only — never import or inline SVGs directly
 - **No HTTP**: webview is sandboxed; no `HttpClient`, no `fetch`, no XHR
 - **Fonts**: Roboto via `@fontsource/roboto` — already loaded globally; no additional font imports

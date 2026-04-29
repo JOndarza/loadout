@@ -79,10 +79,10 @@ webview/src/app/
 ├── layout/
 │   └── shell/                    # ShellComponent — header + tabs + status strip
 ├── features/
-│   ├── workspace/                # Workspace tab: toggle agents/skills
-│   ├── profiles/                 # Profiles tab: save/apply/rename profiles
-│   ├── catalog/                  # Catalog tab: global catalog browsing
-│   └── settings/                 # Settings tab: density, theme, registry
+│   ├── workspace/                # workspace.component.ts + workspace.bloc.ts
+│   ├── profiles/                 # profiles.component.ts  + profiles.bloc.ts
+│   ├── catalog/                  # catalog.component.ts   + catalog.bloc.ts
+│   └── settings/                 # settings.component.ts  + settings.bloc.ts
 └── shared/
     ├── primitives/               # cm-card, cm-toggle, and other base components
     └── overlays/                 # modal, toast, command palette
@@ -130,17 +130,26 @@ Message types are defined in `messages.ts` and are the single source of truth.
 
 ### State pattern
 
-All state lives in `core/state/*.state.ts` signal services. Components are dumb — they inject the state service and read its signals; they never mutate state directly. Mutations flow via `VsCodeBridgeService.send()`.
+All domain state lives in `core/state/*.state.ts` signal services. A **BLoC layer** (`*.bloc.ts`, one per feature) sits between components and the bridge: it owns all `bridge.send()` calls, inbound `messages$` subscriptions, and feature-local reactive state. Components are dumb — they read state signals and call BLoC methods; they never touch the bridge directly.
 
 ```
 VsCodeBridgeService.messages$ (Observable<ExtensionMessage>)
-       ↓ DataSyncService subscribes and routes
-WorkspaceStateService / ProfilesStateService / CatalogStateService / SettingsStateService
-       ↓ expose signals
-  Components (read-only, dumb)
-       ↓ user actions → VsCodeBridgeService.send()
+       ↓ DataSyncService subscribes → routes domain data
+WorkspaceState / ProfilesState / CatalogState / SettingsState  (signal services)
+       ↓ expose readonly signals
+  Components (read-only, dumb views)
+       ↓ user actions → *.bloc.ts methods
+  Feature BLoCs (WorkspaceBloc / ProfilesBloc / CatalogBloc / SettingsBloc)
+       ↓ bridge.send()  /  subscribe to messages$ for feature-specific inbound
   Extension host (mutates filesystem, replies with dataUpdate)
 ```
+
+**BLoC responsibilities:**
+- Action methods that wrap `bridge.send()` calls
+- Feature-local reactive state (`private signal<T>()` exposed via `.asReadonly()`)
+- Inbound message subscriptions (`takeUntilDestroyed()` in constructor)
+
+**Only these services may inject `VsCodeBridgeService` directly:** the four feature BLoCs, `DataSyncService` (domain routing + `refresh()`), and `ThemeService` (theme change subscription).
 
 ## Storage
 

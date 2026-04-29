@@ -35,9 +35,21 @@
 
 ### State ownership
 
-- State lives in `core/state/*.state.ts` services — not in components.
-- Components receive data via injected signals and send actions via `VsCodeBridgeService.send()`.
-- Never call `VsCodeBridgeService.send()` from inside a template event binding; keep it in the component method.
+- Domain state lives in `core/state/*.state.ts` services — not in components.
+- Components inject state services (read signals) and their feature BLoC (call action methods).
+- Never inject `VsCodeBridgeService` in a component or overlay — use the feature BLoC.
+
+### BLoC layer
+
+Each feature folder (`workspace/`, `profiles/`, `catalog/`, `settings/`) contains a `*.bloc.ts`:
+
+- `@Injectable({ providedIn: 'root' })`, injects `VsCodeBridgeService` privately.
+- Exposes **action methods** (wraps `bridge.send()` calls).
+- Owns **feature-local reactive state** (`private signal<T>()` → `.asReadonly()`).
+- Subscribes to inbound `bridge.messages$` in the constructor with `takeUntilDestroyed()`.
+- `DataSyncService` and `ThemeService` are the only other callers of `VsCodeBridgeService`.
+
+Never call `bridge.send()` or subscribe to `bridge.messages$` from a template event binding or component constructor.
 
 ### Accessibility
 
@@ -47,7 +59,7 @@
 
 - Never `import vscode` or reference `vscode.*` in any `webview/` file.
 - Never call `fs`, `path`, `os` from webview code.
-- All side effects (toggle, save, delete) go through `VsCodeBridgeService.send()`.
+- All side effects (toggle, save, delete) go through a BLoC, which calls `VsCodeBridgeService.send()`.
 
 - Keep state services focused on one domain (workspace, profiles, catalog, settings).
 
