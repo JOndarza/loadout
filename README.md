@@ -126,4 +126,4 @@ After the move, this README and the directory structure are already self-contain
 
 ## License
 
-TBD — currently unlicensed. Add a `LICENSE` file before public distribution.
+MIT © 2026 Joaquin Ondarza Ortega
