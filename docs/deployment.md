@@ -4,12 +4,29 @@
 
 ## Local install (development)
 
+**Option A — symlink (fastest):**
+
 ```bash
 git clone <repo-url> loadout
 cd loadout
 ln -s "$(pwd)" "$HOME/.vscode/extensions/loadout"
 # Reload VSCode — the Loadout activity bar icon appears
 ```
+
+**Option B — copy with `deploy.js`:**
+
+```bash
+node deploy.js
+# Reload VSCode — Developer: Reload Window
+```
+
+`deploy.js` copies the following into `~/.vscode/extensions/loadout/`:
+
+- `extension.js`, `data.js`, `update-claude.mjs`, `package.json`, `icon-activity.svg`
+- `src/` — the nine extension-host modules split from `extension.js`
+- `webview-dist/` — the pre-built Angular bundle
+
+Use the copy approach when you need a clean, self-contained install without a symlink (e.g., testing the exact files that would ship).
 
 The compiled webview (`webview-dist/`) is committed to the repo so no build step is required for basic use.
 
@@ -41,7 +58,7 @@ Commit the updated `webview-dist/` alongside your changes.
 ## Extension manifest key points
 
 | Field | Value |
-|---|---|
+| --- | --- |
 | `main` | `./extension.js` |
 | `engines.vscode` | `^1.80.0` |
 | `contributes.views` | `loadout.sidebarView` (webview) |

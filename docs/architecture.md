@@ -5,11 +5,11 @@
 Loadout is a VSCode extension with two separate runtime processes:
 
 ```
-┌─────────────────────────────┐        postMessage        ┌──────────────────────────┐
-│  Extension Host (Node.js)   │ ◄────────────────────────► │  Webview (Angular 21)    │
-│  extension.js + data.js     │                            │  webview/src/app/        │
-│  Full filesystem access     │                            │  Sandboxed — no fs/vscode│
-└─────────────────────────────┘                            └──────────────────────────┘
+┌─────────────────────────────────┐        postMessage        ┌──────────────────────────┐
+│  Extension Host (Node.js)       │ ◄────────────────────────► │  Webview (Angular 21)    │
+│  extension.js + src/ + data.js  │                            │  webview/src/app/        │
+│  Full filesystem access         │                            │  Sandboxed — no fs/vscode│
+└─────────────────────────────────┘                            └──────────────────────────┘
               │
               ▼
    ~/.claude/ (global catalog)
@@ -19,10 +19,25 @@ Loadout is a VSCode extension with two separate runtime processes:
 ## Extension host
 
 **Entry point**: `extension.js`
-- Registers the `loadout.sidebarView` webview panel
-- Handles all incoming `WebviewMessage` commands via `handleMessage()`
-- Owns theme detection (`detectVscodeThemeKind`) and propagates changes via `vscodeThemeChanged`
-- Calls `data.js` for every filesystem operation
+
+- Registers the `loadout.openPanel` and `loadout.refresh` commands
+- Registers the `loadout.sidebarView` webview panel via `LoadoutSidebarProvider`
+- Runs the one-time legacy store migration (`migrateLegacyStore`) on activation
+- Delegates all panel lifecycle and message wiring to `src/panel.js`
+
+**`src/` modules** (split from the original monolithic `extension.js`):
+
+| Module | Responsibility |
+| --- | --- |
+| `src/panel.js` | `LoadoutPanel`, `LoadoutSidebarProvider`, `attachWebview` — panel lifecycle and wiring |
+| `src/message-handler.js` | Full `handleMessage()` dispatch switch — all webview → extension commands |
+| `src/webview-loader.js` | Reads `webview-dist/index.html`, injects nonce, rewrites asset URIs, sets CSP |
+| `src/theme.js` | `detectVscodeThemeKind()` — maps VSCode color theme enum to `'dark' \| 'light'` |
+| `src/snapshot.js` | `buildInitialData()` — assembles the full state snapshot sent on `ready` / `dataUpdate` |
+| `src/settings-host.js` | `getSettings()` / `saveSettings()` — reads and writes settings from `ui-state.json` |
+| `src/validators.js` | `isSafeName()`, `isSafeArray()`, `isAllowedExternalUrl()` — input guards |
+| `src/registry.js` | `checkRegistryStatus()`, `runUpdateScript()`, `parseUpdateOutput()` — registry sync |
+| `src/constants.js` | `DEFAULT_REGISTRY_URL` |
 
 **Data layer**: `data.js`
 - All reads/writes to `.claude/agents/`, `.claude/skills/`, `profiles.json`, `ui-state.json`, and catalog
@@ -69,27 +84,40 @@ webview/src/app/
 Message types are defined in `messages.ts` and are the single source of truth.
 
 **Extension → Webview:**
+
 | Command | Payload | When |
-|---|---|---|
+| --- | --- | --- |
 | `initialData` | `InitialData` | First load, after `ready` |
 | `dataUpdate` | `InitialData` | After any filesystem mutation |
 | `vscodeThemeChanged` | `{ kind }` | User changes VSCode theme |
 | `registryStatus` | `RegistryItem[]` | After `checkRegistry` |
 | `updateStarted` | — | Registry sync begins |
 | `updateDone` | `{ updated, skipped, failed }` | Registry sync complete |
+| `testRegistryResult` | `{ ok, status?, error? }` | After `testRegistry` |
 | `notify` | `{ level, text }` | Toast/notification |
 
 **Webview → Extension:**
+
 | Command | When |
-|---|---|
+| --- | --- |
 | `ready` | Angular app bootstrapped |
-| `toggle` | User enables/disables an agent or skill |
-| `saveProfile` | User clicks "Save loadout" |
-| `applyProfile` | User clicks a profile |
+| `toggle` | User enables/disables a single agent or skill |
+| `bulkToggle` | User enables/disables multiple items at once |
+| `saveProfile` | User saves the current state as a named profile |
+| `applyProfile` | User applies a saved profile |
 | `renameProfile` / `deleteProfile` / `reorderProfiles` | Profile management |
+| `updateProfileItems` | Edits the agent/skill list of an existing profile |
+| `duplicateProfile` | Copies an existing profile under a new name |
 | `addFromGlobal` / `pushToGlobal` | Catalog adopt/promote |
-| `runUpdate` | Registry sync triggered |
+| `checkRegistry` | Fetches registry and compares against local items |
+| `testRegistry` | Validates a registry URL (HEAD check) |
+| `runUpdate` | Runs `update-claude.mjs` to sync from registry |
 | `updateSettings` | Settings change |
+| `revealCatalog` | Opens the global catalog folder in the OS file manager |
+| `openExternal` | Opens a validated HTTPS URL in the default browser |
+| `refresh` | Forces a `dataUpdate` reply without any mutation |
+| `setTab` | Persists the active tab to `ui-state.json` |
+| `enableAll` / `disableAll` | Activates or deactivates all items of a given type |
 
 ### State pattern
 
@@ -121,6 +149,6 @@ WorkspaceStateService / ProfilesStateService / CatalogStateService / SettingsSta
 
 ## Security
 
-- Webview uses a strict nonce-based CSP injected by `loadWebviewHtml()` in `extension.js`
+- Webview uses a strict nonce-based CSP injected by `loadWebviewHtml()` in `src/webview-loader.js`
 - No external network requests from the webview (sandboxed `connect-src`)
 - The registry URL is user-configurable and validated via `testRegistry` before use

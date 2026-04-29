@@ -5,13 +5,19 @@
 - **Documentation language**: English
 - **Code language**: English — all identifiers, comments, log messages, error messages
 
-## Extension host (`extension.js`, `data.js`, `update-claude.mjs`)
+## File size
+
+- Files must not exceed ~400 lines. Split any file that grows beyond this limit — extract focused modules or subcomponents.
+- This applies to both extension host files (e.g. `extension.js` was split into 9 modules under `src/`) and Angular components.
+- Keep each file focused on a single responsibility.
+
+## Extension host (`extension.js`, `src/`, `data.js`, `update-claude.mjs`)
 
 - CommonJS only: `require()` and `module.exports`. No `import`/`export`.
-- `update-claude.mjs` is the one exception — it's a standalone script using ESM (`.mjs` extension).
+- `update-claude.mjs` is the one exception — it is a standalone script using ESM (`.mjs` extension).
 - No npm runtime dependencies — only Node.js built-ins and the `vscode` API.
 - Functions should be named clearly in camelCase: `getWorkspaceRoot`, `toggleItem`, `handleMessage`.
-- Keep functions small and focused. If `handleMessage` grows beyond ~80 lines, split by command group.
+- Keep functions small and focused. If a dispatch function grows beyond ~80 lines, split by command group into a new `src/` module.
 
 ## Angular webview (`webview/`)
 
@@ -39,9 +45,6 @@
 - Never call `fs`, `path`, `os` from webview code.
 - All side effects (toggle, save, delete) go through `VsCodeBridgeService.send()`.
 
-### File size
-
-- Split components over ~400 lines into subcomponents.
 - Keep state services focused on one domain (workspace, profiles, catalog, settings).
 
 ## Comments
