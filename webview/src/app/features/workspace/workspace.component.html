@@ -63,7 +63,7 @@
             (click)="onCardClick(item, $any($event))"
           >
             <span class="cm-ws-type" [attr.data-type]="item.type">
-              {{ item.type === 'agents' ? 'AGT' : 'SKL' }}
+              {{ item.type === 'agents' ? 'AGT' : item.type === 'commands' ? 'CMD' : 'SKL' }}
             </span>
             <div class="cm-ws-info">
               <div class="cm-ws-name" [cmCopy]="item.name" title="Click to copy">{{ item.name }}</div>

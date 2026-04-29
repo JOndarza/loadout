@@ -41,8 +41,8 @@ export class ProfilesBloc {
     this.bridge.send({ command: 'previewApplyProfile', name });
   }
 
-  applyProfile(name: string, silent = false): void {
-    this.bridge.send({ command: 'applyProfile', name, silent });
+  applyProfile(name: string, silent = false, skipRestorePoint = false): void {
+    this.bridge.send({ command: 'applyProfile', name, silent, skipRestorePoint });
   }
 
   confirmApply(): void {
@@ -57,7 +57,11 @@ export class ProfilesBloc {
   }
 
   restore(): void {
-    this.applyProfile('__restore_point__', true);
+    this.applyProfile('__restore_point__', true, true);
+  }
+
+  clearRestorePoint(): void {
+    this.bridge.send({ command: 'clearRestorePoint' });
   }
 
   deleteProfile(name: string): void {

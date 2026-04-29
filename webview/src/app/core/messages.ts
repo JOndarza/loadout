@@ -69,12 +69,10 @@ export type WebviewMessage =
   | { command: 'ready' }
   | { command: 'setTab'; tab: string }
   | { command: 'toggle'; type: ItemType; file: string; wasActive: boolean }
-  | { command: 'enableAll'; type: ItemType }
-  | { command: 'disableAll'; type: ItemType }
   | { command: 'addFromGlobal'; itemType: ItemType; file: string }
   | { command: 'pushToGlobal'; itemType: ItemType; file: string }
   | { command: 'saveProfile'; name: string }
-  | { command: 'applyProfile'; name: string; silent?: boolean }
+  | { command: 'applyProfile'; name: string; silent?: boolean; skipRestorePoint?: boolean }
   | { command: 'deleteProfile'; name: string }
   | { command: 'renameProfile'; from: string; to: string }
   | { command: 'reorderProfiles'; order: string[] }
@@ -93,7 +91,8 @@ export type WebviewMessage =
   | { command: 'exportProfile'; name: string }
   | { command: 'importProfileRequest' }
   | { command: 'importProfileConfirm'; name: string; profile: { agents: string[]; skills: string[]; commands: string[]; description: string }; missing: PendingItems }
-  | { command: 'bulkAddFromGlobal'; items: Array<{ itemType: ItemType; file: string }> };
+  | { command: 'bulkAddFromGlobal'; items: Array<{ itemType: ItemType; file: string }> }
+  | { command: 'clearRestorePoint' };
 
 // ─── Inbound (extension → webview) ───────────────────────────────────────────
 export type ExtensionMessage =

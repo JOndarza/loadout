@@ -77,6 +77,12 @@ cm-profiles {
     cursor: grab;
     &:active { cursor: grabbing; }
   }
+
+  > li:not([draggable='true']) .cm-profiles-drag {
+    cursor: default;
+    pointer-events: none;
+    opacity: 0;
+  }
 }
 
 .cm-profiles-drag {

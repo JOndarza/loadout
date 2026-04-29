@@ -1,6 +1,7 @@
 <div class="cm-profiles">
   <div class="cm-profiles-create">
     <input
+      #nameInput
       type="text"
       class="cm-profiles-input"
       [ngModel]="newName()"
@@ -17,6 +18,7 @@
   @if (state.hasRestorePoint()) {
     <div class="cm-profiles-restore">
       <cm-button variant="ghost" size="sm" (click)="restore()">↩ Restore previous state</cm-button>
+      <cm-button variant="ghost" size="sm" (click)="clearRestorePoint()" title="Dismiss restore point">✕</cm-button>
     </div>
   }
 

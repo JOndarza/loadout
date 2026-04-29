@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ProfilesState, type ProfileEntry } from '@state/profiles.state';
 import { WorkspaceState } from '@state/workspace.state';
+import { ShortcutsService } from '@core/shortcuts.service';
 import { ProfilesBloc } from './profiles.bloc';
 import type { PendingItems } from '@core/messages';
 import { CmButtonComponent, CmCardComponent, CmEmptyComponent } from '@shared/primitives';
@@ -19,6 +21,8 @@ export class ProfilesComponent {
   protected readonly state = inject(ProfilesState);
   protected readonly workspace = inject(WorkspaceState);
   private readonly bloc = inject(ProfilesBloc);
+  private readonly shortcuts = inject(ShortcutsService);
+  private readonly nameInput = viewChild<ElementRef<HTMLInputElement>>('nameInput');
 
   protected readonly newName = signal('');
   protected readonly editingName = signal<string | null>(null);
@@ -33,6 +37,14 @@ export class ProfilesComponent {
   protected readonly importPreview = this.bloc.importPreview;
 
   protected readonly entries = computed(() => this.state.entries());
+
+  constructor() {
+    this.shortcuts.events$.pipe(takeUntilDestroyed()).subscribe((e) => {
+      if (e.type === 'saveProfile') {
+        this.nameInput()?.nativeElement.focus();
+      }
+    });
+  }
 
   protected isActive(name: string): boolean {
     return this.state.activeName() === name;
@@ -82,6 +94,10 @@ export class ProfilesComponent {
 
   protected restore(): void {
     this.bloc.restore();
+  }
+
+  protected clearRestorePoint(): void {
+    this.bloc.clearRestorePoint();
   }
 
   protected remove(name: string): void {

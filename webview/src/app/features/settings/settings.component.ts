@@ -57,6 +57,12 @@ export class SettingsComponent {
     this.bloc.testRegistry(url);
   }
 
+  protected readonly openFolderLabel = this.sc.isMac
+    ? 'Open in Finder'
+    : /win/i.test(navigator.userAgent)
+      ? 'Open in Explorer'
+      : 'Open folder';
+
   protected readonly shortcuts = [
     { keys: ['1', '2', '3'], action: 'Switch tabs (Workspace · Profiles · Catalog)' },
     { keys: ['/'], action: 'Focus search' },

@@ -14,11 +14,5 @@ export class WorkspaceBloc {
     this.bridge.send({ command: 'bulkToggle', items });
   }
 
-  enableAll(type: ItemType): void {
-    this.bridge.send({ command: 'enableAll', type });
-  }
 
-  disableAll(type: ItemType): void {
-    this.bridge.send({ command: 'disableAll', type });
-  }
 }

@@ -89,7 +89,7 @@ export class CommandPaletteComponent {
         label: `Apply loadout: ${p.name}`,
         hint: `${p.agents.length}a · ${p.skills.length}s · ${p.commands.length}c`,
         category: 'profile',
-        run: () => this.profilesBloc.applyProfile(p.name, true),
+        run: () => this.profilesBloc.applyProfile(p.name, true, true),
       });
     }
 

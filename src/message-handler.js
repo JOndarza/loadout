@@ -81,15 +81,16 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
       const profiles = getProfiles(storePath);
       const profile  = profiles[msg.name];
       if (!profile) return;
-      // snapshot current state so the user can undo the apply
-      profiles['__restore_point__'] = {
-        agents:    getItems(root, storePath, 'agents').filter(a => a.active).map(a => a.file),
-        skills:    getItems(root, storePath, 'skills').filter(s => s.active).map(s => s.file),
-        commands:  getItems(root, storePath, 'commands').filter(c => c.active).map(c => c.file),
-        createdAt: new Date().toISOString(),
-        order:     -1,
-      };
-      saveProfiles(storePath, profiles);
+      if (!msg.skipRestorePoint) {
+        profiles['__restore_point__'] = {
+          agents:    getItems(root, storePath, 'agents').filter(a => a.active).map(a => a.file),
+          skills:    getItems(root, storePath, 'skills').filter(s => s.active).map(s => s.file),
+          commands:  getItems(root, storePath, 'commands').filter(c => c.active).map(c => c.file),
+          createdAt: new Date().toISOString(),
+          order:     -1,
+        };
+        saveProfiles(storePath, profiles);
+      }
       for (const a of getItems(root, storePath, 'agents')) {
         if (a.active !== profile.agents.includes(a.file))
           toggleItem(root, storePath, 'agents', a.file, a.active);
@@ -289,6 +290,14 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
         order:       Object.keys(profiles).length,
         ...(hasMissing ? { pendingItems: msg.missing } : {}),
       };
+      saveProfiles(storePath, profiles);
+      refresh();
+      break;
+    }
+
+    case 'clearRestorePoint': {
+      const profiles = getProfiles(storePath);
+      delete profiles['__restore_point__'];
       saveProfiles(storePath, profiles);
       refresh();
       break;
