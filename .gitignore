@@ -24,9 +24,9 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# Excludes
-!.claude/rules/
-!.claude/skills/
+# Excludes — un-ignore specific .claude subdirectories
+!.claude/rules
+!.claude/skills
 .claude/skills/*
-!.claude/skills/docs-architect/
-!.claude/skills/loadout-system-design/
+!.claude/skills/docs-architect
+!.claude/skills/loadout-system-design
