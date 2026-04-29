@@ -106,6 +106,16 @@ function readDescription(filePath) {
   } catch { return ''; }
 }
 
+function readFrontmatterField(filePath, field) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8').slice(0, 4096);
+    const fm = content.match(/^---\n([\s\S]*?)\n---/);
+    if (!fm) return null;
+    const m = fm[1].match(new RegExp(`^${field}:\\s*(.+)$`, 'm'));
+    return m ? m[1].trim() : null;
+  } catch { return null; }
+}
+
 // ─── Legacy store migration ───────────────────────────────────────────────────
 // One-time copy from <root>/.claude-store/ to the new storePath. The marker
 // file ensures we never re-copy after the user has modified data in storePath.
@@ -131,7 +141,9 @@ function getItems(root, storePath, type) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.isFile() && entry.name.endsWith('.md')) {
         const fp = path.join(dir, entry.name);
-        items.push({ name: entry.name.replace('.md', ''), file: entry.name, active, tokens: estimateTokens(fp), description: readDescription(fp) });
+        const item = { name: entry.name.replace('.md', ''), file: entry.name, active, tokens: estimateTokens(fp), description: readDescription(fp) };
+        if (type === 'agents') item.memoryScope = readFrontmatterField(fp, 'memory');
+        items.push(item);
       } else if (entry.isDirectory()) {
         const skillFile = path.join(dir, entry.name, 'SKILL.md');
         if (fs.existsSync(skillFile)) {

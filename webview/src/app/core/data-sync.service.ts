@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CatalogState } from './state/catalog.state';
+import { ClaudeSettingsState } from './state/claude-settings.state';
 import { ProfilesState } from './state/profiles.state';
 import { SettingsState } from './state/settings.state';
 import { WorkspaceState } from './state/workspace.state';
@@ -10,10 +11,11 @@ import { VsCodeBridgeService } from './vscode-bridge.service';
 @Injectable({ providedIn: 'root' })
 export class DataSyncService {
   private readonly bridge = inject(VsCodeBridgeService);
-  private readonly workspace = inject(WorkspaceState);
-  private readonly profiles = inject(ProfilesState);
-  private readonly catalog = inject(CatalogState);
-  private readonly settings = inject(SettingsState);
+  private readonly workspace      = inject(WorkspaceState);
+  private readonly profiles       = inject(ProfilesState);
+  private readonly catalog        = inject(CatalogState);
+  private readonly settings       = inject(SettingsState);
+  private readonly claudeSettings = inject(ClaudeSettingsState);
 
   private readonly _root = signal<string>('');
   private readonly _version = signal<string>('');
@@ -46,6 +48,7 @@ export class DataSyncService {
     this.profiles.setAll(data.profiles);
     this.catalog.setAll(data.catalogAgents, data.catalogSkills, data.catalogCommands ?? [], data.globalRoot);
     this.settings.setAll(data.settings);
+    this.claudeSettings.setAll(data.claudeSettings ?? {}, data.memoryFiles ?? []);
 
     // Resolve active profile using Set comparison (handles filenames with commas, stable order)
     const activeAgents   = new Set(data.agents.filter((a) => a.active).map((a) => a.file));

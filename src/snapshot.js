@@ -2,6 +2,8 @@ const { getGlobalRoot, getItems, getCatalogItems, getProfiles, getUiState } = re
 const { getSettings }           = require('./settings-host');
 const { detectVscodeThemeKind } = require('./theme');
 const { version: EXT_VERSION }  = require('../package.json');
+const { getClaudeSettings }     = require('./claude-settings');
+const { getMemoryFiles }        = require('./memory-files');
 
 function buildInitialData(root, storePath) {
   const globalRoot = getGlobalRoot();
@@ -19,6 +21,8 @@ function buildInitialData(root, storePath) {
     vscodeThemeKind:  detectVscodeThemeKind(),
     extensionVersion: EXT_VERSION,
     lastApplied:      getUiState(storePath).lastApplied ?? null,
+    claudeSettings:   getClaudeSettings(),
+    memoryFiles:      getMemoryFiles(root),
   };
 }
 

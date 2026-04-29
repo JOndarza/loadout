@@ -97,6 +97,134 @@
     </div>
   </section>
 
+  <!-- ─── Claude Code model ───────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Claude Code model</h2>
+      <p class="cm-set-p">Model and effort level for Claude Code sessions (writes ~/.claude/settings.json).</p>
+    </header>
+
+    <div class="cm-set-row">
+      <label class="cm-set-label">Model</label>
+      <div class="cm-set-control">
+        <select
+          class="cm-set-select"
+          [ngModel]="claudeSettings.settings().model ?? ''"
+          (ngModelChange)="updateClaudeSetting('model', $event || null)"
+          [ngModelOptions]="{ standalone: true }"
+        >
+          <option value="">Default</option>
+          <option value="claude-opus-4-7">Opus 4.7</option>
+          <option value="claude-sonnet-4-6">Sonnet 4.6</option>
+          <option value="claude-haiku-4-5-20251001">Haiku 4.5</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="cm-set-row">
+      <label class="cm-set-label">Effort</label>
+      <div class="cm-set-control">
+        <select
+          class="cm-set-select"
+          [ngModel]="claudeSettings.settings().effortLevel ?? ''"
+          (ngModelChange)="updateClaudeSetting('effortLevel', $event || null)"
+          [ngModelOptions]="{ standalone: true }"
+        >
+          <option value="">Default</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="max">Max</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="cm-set-row">
+      <label class="cm-set-label">Auto-memory</label>
+      <div class="cm-set-control">
+        <cm-toggle
+          [checked]="claudeSettings.settings().autoMemoryEnabled ?? false"
+          ariaLabel="Enable auto-memory"
+          (toggled)="updateClaudeSetting('autoMemoryEnabled', !(claudeSettings.settings().autoMemoryEnabled ?? false))"
+        />
+        <p class="cm-set-hint">Allows Claude to write session notes to MEMORY.md.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Session environment ──────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Session environment</h2>
+      <p class="cm-set-p">Environment variables injected into every Claude Code session.</p>
+    </header>
+
+    @if (claudeSettings.envEntries().length === 0) {
+      <p class="cm-set-hint cm-set-hint--padded">No variables set.</p>
+    } @else {
+      @for (key of claudeSettings.envEntries(); track key) {
+        <div class="cm-set-row">
+          <code class="cm-set-env-key">{{ key }}</code>
+          <div class="cm-set-control cm-set-control--inline">
+            <span class="cm-set-env-mask">••••••••</span>
+            <cm-button variant="ghost" size="sm" (click)="removeEnvVar(key)" aria-label="Remove {{ key }}">✕</cm-button>
+          </div>
+        </div>
+      }
+    }
+
+    <div class="cm-set-row cm-set-row--add-env">
+      <input
+        type="text"
+        class="cm-set-input cm-set-input--sm"
+        [ngModel]="newEnvKey()"
+        (ngModelChange)="newEnvKey.set($event)"
+        [ngModelOptions]="{ standalone: true }"
+        placeholder="KEY"
+        (keydown.enter)="addEnvVar()"
+        aria-label="New env var key"
+      />
+      <input
+        type="password"
+        class="cm-set-input cm-set-input--sm"
+        [ngModel]="newEnvValue()"
+        (ngModelChange)="newEnvValue.set($event)"
+        [ngModelOptions]="{ standalone: true }"
+        placeholder="VALUE"
+        (keydown.enter)="addEnvVar()"
+        aria-label="New env var value"
+      />
+      <cm-button variant="secondary" size="sm" (click)="addEnvVar()">Add</cm-button>
+    </div>
+  </section>
+
+  <!-- ─── Context files ────────────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Context files</h2>
+      <p class="cm-set-p">CLAUDE.md and rules files loaded into Claude Code sessions.</p>
+    </header>
+
+    @if (claudeSettings.memoryFiles().length === 0) {
+      <p class="cm-set-hint cm-set-hint--padded">No context files found.</p>
+    } @else {
+      @for (f of claudeSettings.memoryFiles(); track f.path) {
+        <div class="cm-set-row">
+          <div class="cm-set-control cm-set-control--stack">
+            <div class="cm-set-ctx-row">
+              <span class="cm-set-ctx-scope" [attr.data-scope]="f.scope">{{ f.scope }}</span>
+              <code class="cm-set-ctx-path">{{ f.path }}</code>
+            </div>
+            @if (f.pathsGlob) {
+              <p class="cm-set-hint">paths: {{ f.pathsGlob }}</p>
+            }
+          </div>
+          <cm-button variant="ghost" size="sm" (click)="openMemoryFile(f.path)" aria-label="Open {{ f.path }}">Open</cm-button>
+        </div>
+      }
+    }
+  </section>
+
   <!-- ─── Registry ─────────────────────────────────────────────────── -->
   <section class="cm-set-section">
     <header class="cm-set-section-head">

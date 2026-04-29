@@ -8,6 +8,20 @@ export interface WorkspaceItem {
   active: boolean;
   tokens: number;
   description: string;
+  memoryScope?: string | null;
+}
+
+export interface ClaudeSettings {
+  model?: string | null;
+  effortLevel?: string | null;
+  autoMemoryEnabled?: boolean | null;
+  env?: Record<string, string>;
+}
+
+export interface MemoryFile {
+  path: string;
+  scope: 'user' | 'project' | 'local' | 'rules';
+  pathsGlob?: string | null;
 }
 
 export interface CatalogItem {
@@ -58,6 +72,8 @@ export interface InitialData {
   vscodeThemeKind: 'dark' | 'light';
   extensionVersion: string;
   lastApplied?: string;
+  claudeSettings: ClaudeSettings;
+  memoryFiles: MemoryFile[];
 }
 
 export interface RegistryItem {
@@ -95,7 +111,11 @@ export type WebviewMessage =
   | { command: 'importProfileRequest' }
   | { command: 'importProfileConfirm'; name: string; profile: { agents: string[]; skills: string[]; commands: string[]; description: string }; missing: PendingItems }
   | { command: 'bulkAddFromGlobal'; items: Array<{ itemType: ItemType; file: string }> }
-  | { command: 'clearRestorePoint' };
+  | { command: 'clearRestorePoint' }
+  | { command: 'updateClaudeSetting'; key: string; value: string | boolean | null }
+  | { command: 'openMemoryFile'; path: string }
+  | { command: 'addEnvVar'; key: string; value: string }
+  | { command: 'removeEnvVar'; key: string };
 
 // ─── Inbound (extension → webview) ───────────────────────────────────────────
 export type ExtensionMessage =

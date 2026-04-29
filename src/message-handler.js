@@ -14,6 +14,7 @@ const { DEFAULT_REGISTRY_URL }                                               = r
 const { ALLOWED_ITEM_TYPES, isSafeName, isSafeArray, isAllowedExternalUrl } = require('./validators');
 const { checkRegistryStatus, runUpdateScript, parseUpdateOutput }            = require('./registry');
 const { log }                                                                = require('./logger');
+const { setClaudeSettingKey, addEnvVar, removeEnvVar }                      = require('./claude-settings');
 
 const NO_ROOT_OK = new Set(['ready', 'updateSettings', 'openExternal', 'revealCatalog', 'testRegistry']);
 
@@ -311,6 +312,32 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
       refresh();
       break;
     }
+
+    case 'updateClaudeSetting':
+      if (typeof msg.key !== 'string') return;
+      setClaudeSettingKey(msg.key, msg.value ?? null);
+      refresh();
+      break;
+
+    case 'openMemoryFile':
+      if (typeof msg.path !== 'string') return;
+      vscode.workspace.openTextDocument(msg.path)
+        .then((doc) => vscode.window.showTextDocument(doc))
+        .catch(() => postToWebview({ command: 'notify', level: 'warn', text: `Could not open: ${msg.path}` }));
+      break;
+
+    case 'addEnvVar':
+      if (typeof msg.key !== 'string' || typeof msg.value !== 'string') return;
+      if (!msg.key.trim()) return;
+      addEnvVar(msg.key.trim(), msg.value);
+      refresh();
+      break;
+
+    case 'removeEnvVar':
+      if (typeof msg.key !== 'string') return;
+      removeEnvVar(msg.key);
+      refresh();
+      break;
 
     case 'clearRestorePoint': {
       const profiles = getProfiles(storePath);

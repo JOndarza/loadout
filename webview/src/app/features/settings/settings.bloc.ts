@@ -43,6 +43,23 @@ export class SettingsBloc {
     this.toast.show(label);
   }
 
+  updateClaudeSetting(key: string, value: string | boolean | null): void {
+    this.bridge.send({ command: 'updateClaudeSetting', key, value });
+    this.toast.show('Saved');
+  }
+
+  openMemoryFile(path: string): void {
+    this.bridge.send({ command: 'openMemoryFile', path });
+  }
+
+  addEnvVar(key: string, value: string): void {
+    this.bridge.send({ command: 'addEnvVar', key, value });
+  }
+
+  removeEnvVar(key: string): void {
+    this.bridge.send({ command: 'removeEnvVar', key });
+  }
+
   revealCatalog(): void {
     this.bridge.send({ command: 'revealCatalog' });
   }

@@ -2,27 +2,31 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { SettingsState } from '@state/settings.state';
 import { CatalogState } from '@state/catalog.state';
+import { ClaudeSettingsState } from '@state/claude-settings.state';
 import { SettingsBloc } from './settings.bloc';
 import { DataSyncService } from '@core/data-sync.service';
 import { ShortcutsService } from '@core/shortcuts.service';
-import { CmButtonComponent } from '@shared/primitives';
+import { CmButtonComponent, CmToggleComponent } from '@shared/primitives';
 import type { Settings } from '@core/messages';
 
 @Component({
   selector: 'cm-settings',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, CmButtonComponent],
+  imports: [FormsModule, CmButtonComponent, CmToggleComponent],
   templateUrl: './settings.component.html',
 })
 export class SettingsComponent {
-  protected readonly settings = inject(SettingsState);
-  protected readonly catalog = inject(CatalogState);
-  protected readonly sync = inject(DataSyncService);
-  private readonly bloc = inject(SettingsBloc);
-  private readonly sc = inject(ShortcutsService);
+  protected readonly settings       = inject(SettingsState);
+  protected readonly catalog        = inject(CatalogState);
+  protected readonly claudeSettings = inject(ClaudeSettingsState);
+  protected readonly sync           = inject(DataSyncService);
+  private readonly bloc             = inject(SettingsBloc);
+  private readonly sc               = inject(ShortcutsService);
 
   protected readonly registryUrlDraft = signal('');
+  protected readonly newEnvKey   = signal('');
+  protected readonly newEnvValue = signal('');
   protected readonly registryTestResult = this.bloc.registryTestResult;
   protected readonly registryTestMessage = this.bloc.registryTestMessage;
 
@@ -45,6 +49,27 @@ export class SettingsComponent {
     if (url && url !== this.registryUrl()) {
       this.bloc.updateSettings('registryUrl', url);
     }
+  }
+
+  protected updateClaudeSetting(key: string, value: string | boolean | null): void {
+    this.bloc.updateClaudeSetting(key, value);
+  }
+
+  protected openMemoryFile(path: string): void {
+    this.bloc.openMemoryFile(path);
+  }
+
+  protected addEnvVar(): void {
+    const key = this.newEnvKey().trim();
+    const val = this.newEnvValue().trim();
+    if (!key) return;
+    this.bloc.addEnvVar(key, val);
+    this.newEnvKey.set('');
+    this.newEnvValue.set('');
+  }
+
+  protected removeEnvVar(key: string): void {
+    this.bloc.removeEnvVar(key);
   }
 
   protected openLink(url: string): void {

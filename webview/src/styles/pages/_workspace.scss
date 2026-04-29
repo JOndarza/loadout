@@ -106,6 +106,38 @@ cm-workspace {
   @include at-xs { display: none; }
 }
 
+.cm-ws-memory {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 8px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-sm);
+  background: rgba(167, 139, 250, 0.12);
+  color: rgb(167, 139, 250);
+  @include ring(rgba(167, 139, 250, 0.3));
+  align-self: flex-start;
+  margin-top: 8px;
+
+  &[data-scope='project'] {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+    @include ring(rgba(var(--primary-rgb), 0.25));
+  }
+
+  &[data-scope='local'] {
+    background: rgba(var(--gold-rgb), 0.1);
+    color: var(--gold);
+    @include ring(rgba(var(--gold-rgb), 0.25));
+  }
+
+  @include at-xs { display: none; }
+}
+
 .cm-ws-info {
   flex: 1;
   min-width: 0;
