@@ -18,7 +18,7 @@ function getWorkspaceRoot() {
 }
 
 function getGlobalRoot() {
-  const cfg = vscode.workspace.getConfiguration('claudeManager').get('globalCatalogPath');
+  const cfg = vscode.workspace.getConfiguration('loadout').get('globalCatalogPath');
   return cfg?.trim() || path.join(os.homedir(), '.claude');
 }
 

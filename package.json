@@ -58,10 +58,10 @@
     "configuration": {
       "title": "Loadout",
       "properties": {
-        "claudeManager.globalCatalogPath": {
+        "loadout.globalCatalogPath": {
           "type": "string",
           "default": "",
-          "description": "Path to the global agents/skills catalog. Leave empty to use ~/.claude. (Setting key remains 'claudeManager.*' for backward compatibility with existing configs.)"
+          "description": "Path to the global agents/skills catalog. Leave empty to use ~/.claude."
         }
       }
     }

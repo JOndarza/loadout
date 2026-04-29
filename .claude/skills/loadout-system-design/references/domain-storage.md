@@ -77,7 +77,7 @@ interface Profile {
 | `~/.claude/.claude-hashes.json` | SHA-256 hash baseline for catalog sync detection |
 | `context.storageUri/.migrated` | One-time migration marker (legacy store → storageUri) |
 
-`globalRoot` defaults to `~/.claude/` but can be overridden by VSCode setting `claudeManager.globalCatalogPath`. **Always call `getGlobalRoot()` — never hardcode the path.**
+`globalRoot` defaults to `~/.claude/` but can be overridden by VSCode setting `loadout.globalCatalogPath`. **Always call `getGlobalRoot()` — never hardcode the path.**
 
 ---
 

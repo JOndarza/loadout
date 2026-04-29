@@ -65,7 +65,7 @@
 ### Workspace helpers
 ```javascript
 getWorkspaceRoot()             // → string | null (first workspace folder)
-getGlobalRoot()                // → string (~/.claude or claudeManager.globalCatalogPath)
+getGlobalRoot()                // → string (~/.claude or loadout.globalCatalogPath)
 ```
 
 ### Hash helpers (internal — not exported)
