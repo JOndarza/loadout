@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { WorkspaceBloc } from './workspace.bloc';
 import { WorkspaceState } from '@state/workspace.state';
 import { ProfilesState } from '@state/profiles.state';
 import { TabFiltersState, type WorkspaceKind } from '@state/tab-filters.state';
+import { ShortcutsService } from '@core/shortcuts.service';
 import {
   CmButtonComponent,
   CmCardComponent,
@@ -40,10 +42,17 @@ export class WorkspaceComponent {
   protected readonly state = inject(WorkspaceState);
   protected readonly filters = inject(TabFiltersState);
   private readonly profiles = inject(ProfilesState);
+  private readonly shortcuts = inject(ShortcutsService);
 
   readonly searchQuery = input<string>('');
 
   protected readonly orphanOnly = signal(false);
+
+  constructor() {
+    this.shortcuts.events$.pipe(takeUntilDestroyed()).subscribe((e) => {
+      if (e.type === 'orphanOnly') this.toggleNotInProfile();
+    });
+  }
   protected readonly selected = signal<Set<string>>(new Set());
   private lastClickedKey = '';
 

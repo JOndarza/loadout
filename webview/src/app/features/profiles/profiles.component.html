@@ -68,6 +68,7 @@
                     <span class="cm-profiles-pending-badge" [title]="pendingCount(p) + ' items not yet in this workspace'">
                       ⚠ {{ pendingCount(p) }} pending
                     </span>
+                    <cm-button variant="ghost" size="sm" (click)="adoptPending(p)" title="Adopt all pending items from catalog">Adopt</cm-button>
                   }
                 </div>
               }
@@ -102,6 +103,9 @@
                 <strong>{{ p.skills.length }}</strong> skills ·
                 <strong>{{ p.commands.length }}</strong> commands ·
                 {{ formatDate(p.createdAt) }}
+                @if (p.appliedCount > 0) {
+                  · applied <strong>{{ p.appliedCount }}×</strong>
+                }
               </div>
             </div>
 

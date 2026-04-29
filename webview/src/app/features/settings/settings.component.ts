@@ -68,6 +68,7 @@ export class SettingsComponent {
     { keys: ['/'], action: 'Focus search' },
     { keys: [this.sc.modKey, 'K'], action: 'Open command palette' },
     { keys: ['a'], action: 'Toggle "Active only" filter in Workspace' },
+    { keys: ['p'], action: 'Toggle "Not in profile" filter in Workspace' },
     { keys: ['s'], action: 'Save current state as new loadout' },
     { keys: ['Esc'], action: 'Close palette / cancel inline edits' },
   ];

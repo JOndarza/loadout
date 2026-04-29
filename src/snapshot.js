@@ -1,4 +1,4 @@
-const { getGlobalRoot, getItems, getCatalogItems, getProfiles } = require('../data');
+const { getGlobalRoot, getItems, getCatalogItems, getProfiles, getUiState } = require('../data');
 const { getSettings }           = require('./settings-host');
 const { detectVscodeThemeKind } = require('./theme');
 const { version: EXT_VERSION }  = require('../package.json');
@@ -18,6 +18,7 @@ function buildInitialData(root, storePath) {
     settings:         getSettings(storePath),
     vscodeThemeKind:  detectVscodeThemeKind(),
     extensionVersion: EXT_VERSION,
+    lastApplied:      getUiState(storePath).lastApplied ?? null,
   };
 }
 

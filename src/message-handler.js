@@ -6,6 +6,7 @@ const {
   getGlobalRoot, getItems, toggleItem, copyFromGlobal, pushToGlobal,
   getProfiles, saveProfiles, renameProfile, reorderProfiles,
   updateProfileItems, duplicateProfile, updateProfileDescription,
+  getUiState, saveUiState,
 } = require('../data');
 const { buildInitialData }                                                   = require('./snapshot');
 const { getSettings, saveSettings }                                          = require('./settings-host');
@@ -105,6 +106,10 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
         if (c.active !== (profile.commands ?? []).includes(c.file))
           toggleItem(root, storePath, 'commands', c.file, c.active);
       }
+      profile.appliedCount  = (profile.appliedCount  ?? 0) + 1;
+      profile.lastAppliedAt = new Date().toISOString();
+      saveProfiles(storePath, profiles);
+      saveUiState(storePath, { ...getUiState(storePath), lastApplied: msg.name });
       refresh();
       if (!msg.silent) vscode.window.withProgress(
         { location: vscode.ProgressLocation.Window, title: `Loadout "${msg.name}" applied` },

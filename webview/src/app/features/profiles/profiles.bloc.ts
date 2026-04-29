@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { VsCodeBridgeService } from '@core/vscode-bridge.service';
-import type { PendingItems, Profile } from '@core/messages';
+import type { ItemType, PendingItems, Profile } from '@core/messages';
 import type { ApplyDiff } from '@shared/overlays/apply-confirm.component';
 import type { ImportPreview } from '@shared/overlays/import-profile.component';
 
@@ -105,5 +105,14 @@ export class ProfilesBloc {
 
   reorderProfiles(order: string[]): void {
     this.bridge.send({ command: 'reorderProfiles', order });
+  }
+
+  adoptPending(pending: PendingItems): void {
+    const items: Array<{ itemType: ItemType; file: string }> = [
+      ...pending.agents.map((f) => ({ itemType: 'agents' as ItemType, file: f })),
+      ...pending.skills.map((f) => ({ itemType: 'skills' as ItemType, file: f })),
+      ...pending.commands.map((f) => ({ itemType: 'commands' as ItemType, file: f })),
+    ];
+    if (items.length) this.bridge.send({ command: 'bulkAddFromGlobal', items });
   }
 }

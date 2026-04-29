@@ -100,6 +100,10 @@ export class ProfilesComponent {
     this.bloc.clearRestorePoint();
   }
 
+  protected adoptPending(p: ProfileEntry): void {
+    this.bloc.adoptPending(p.pendingItems);
+  }
+
   protected remove(name: string): void {
     this.bloc.deleteProfile(name);
   }

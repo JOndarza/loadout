@@ -10,6 +10,8 @@ export interface ProfileEntry {
   order: number;
   description: string;
   pendingItems: PendingItems;
+  lastAppliedAt: string;
+  appliedCount: number;
 }
 
 const RESTORE_POINT_KEY = '__restore_point__';
@@ -33,8 +35,10 @@ export class ProfilesState {
         commands:    p.commands    ?? [],
         createdAt:   p.createdAt   ?? '',
         order:       p.order       ?? idx,
-        description: p.description ?? '',
-        pendingItems: p.pendingItems ?? EMPTY_PENDING,
+        description:   p.description   ?? '',
+        pendingItems:  p.pendingItems  ?? EMPTY_PENDING,
+        lastAppliedAt: p.lastAppliedAt ?? '',
+        appliedCount:  p.appliedCount  ?? 0,
       }))
       .sort((a, b) => a.order - b.order);
   });

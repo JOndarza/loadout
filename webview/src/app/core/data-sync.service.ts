@@ -58,7 +58,10 @@ export class DataSyncService {
         this.setsEqual(activeSkills,   new Set(p.skills   ?? [])) &&
         this.setsEqual(activeCommands, new Set(p.commands ?? [])),
     );
-    this.profiles.setActiveName(found?.[0] ?? null);
+    const lastAppliedFallback = data.lastApplied && data.profiles[data.lastApplied]
+      ? data.lastApplied
+      : null;
+    this.profiles.setActiveName(found?.[0] ?? lastAppliedFallback);
   }
 
   private setsEqual<T>(a: Set<T>, b: Set<T>): boolean {

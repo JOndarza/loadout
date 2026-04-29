@@ -33,6 +33,8 @@ export interface Profile {
   order?: number;
   description?: string;
   pendingItems?: PendingItems;
+  lastAppliedAt?: string;
+  appliedCount?: number;
 }
 
 export interface Settings {
@@ -55,6 +57,7 @@ export interface InitialData {
   settings: Settings;
   vscodeThemeKind: 'dark' | 'light';
   extensionVersion: string;
+  lastApplied?: string;
 }
 
 export interface RegistryItem {

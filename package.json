@@ -47,6 +47,10 @@
       {
         "command": "loadout.adoptFile",
         "title": "Loadout: Adopt into Workspace"
+      },
+      {
+        "command": "loadout.applyProfile",
+        "title": "Loadout: Apply Profile…"
       }
     ],
     "menus": {

@@ -6,6 +6,7 @@ export type ShortcutEvent =
   | { type: 'palette' }
   | { type: 'search' }
   | { type: 'activeOnly' }
+  | { type: 'orphanOnly' }
   | { type: 'saveProfile' }
   | { type: 'escape' };
 
@@ -59,6 +60,8 @@ export class ShortcutsService {
       this.events.next({ type: 'search' });
     } else if (e.key.toLowerCase() === 'a') {
       this.events.next({ type: 'activeOnly' });
+    } else if (e.key.toLowerCase() === 'p') {
+      this.events.next({ type: 'orphanOnly' });
     } else if (e.key.toLowerCase() === 's') {
       this.events.next({ type: 'saveProfile' });
     }
