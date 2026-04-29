@@ -87,7 +87,7 @@ The default registry URL is `https://www.aitmpl.com/components.json`. Users can 
 
 ## VSCode Marketplace
 
-Not yet published. Add a `LICENSE` file and update `package.json` fields (`publisher`, `repository`, `icon`) before publishing.
+Not yet published. Update `package.json` fields (`publisher`, `repository`, `icon`) before publishing. MIT license is in place.
 
 ## Extracting to its own repo (when needed)
 

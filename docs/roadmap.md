@@ -18,7 +18,8 @@ Per-workspace state migrated from legacy `.claude-store/` to VSCode `context.sto
 - [x] v2 storage migration (legacy `.claude-store/` → `context.storageUri`)
 
 ### Phase 2 — Polish (planned)
-- [ ] Marketplace publish (requires LICENSE + publisher setup)
+
+- [ ] Marketplace publish (requires publisher setup in package.json)
 - [ ] Test coverage for webview state services
 - [ ] Storybook component documentation
 - [ ] Drag-and-drop profile reordering
