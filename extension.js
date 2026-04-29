@@ -2,6 +2,7 @@ const vscode = require('vscode');
 const fs     = require('fs');
 const path   = require('path');
 const { getWorkspaceRoot, getGlobalRoot, getProfiles, getItems, toggleItem, migrateLegacyStore, copyFromGlobal } = require('./data');
+const { LoadoutDecorationProvider } = require('./src/decoration-provider');
 const { LoadoutPanel, LoadoutSidebarProvider }                                                                  = require('./src/panel');
 const { loadWebviewHtml }                                                                                       = require('./src/webview-loader');
 const { init: initLogger, log }                                                                                 = require('./src/logger');
@@ -31,6 +32,10 @@ function applyProfileItems(root, storePath, name) {
 
 function activate(context) {
   initLogger(context);
+  const decorationProvider = new LoadoutDecorationProvider();
+  context.subscriptions.push(
+    vscode.window.registerFileDecorationProvider(decorationProvider),
+  );
 
   const storePath = context.storageUri?.fsPath ?? null;
   const root      = getWorkspaceRoot();
@@ -40,7 +45,11 @@ function activate(context) {
     if (root) migrateLegacyStore(root, storePath);
   }
 
-  const sidebarProvider = new LoadoutSidebarProvider(context, storePath);
+  const sidebarProvider = new LoadoutSidebarProvider(
+    context,
+    storePath,
+    () => decorationProvider.update(storePath),
+  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand('loadout.openPanel', () =>

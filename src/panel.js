@@ -92,10 +92,11 @@ class LoadoutPanel {
 }
 
 class LoadoutSidebarProvider {
-  constructor(context, storePath) {
-    this._context   = context;
-    this._storePath = storePath;
-    this._refresh   = null;
+  constructor(context, storePath, onAfterRefresh = null) {
+    this._context        = context;
+    this._storePath      = storePath;
+    this._refresh        = null;
+    this._onAfterRefresh = onAfterRefresh;
   }
 
   resolveWebviewView(webviewView) {
@@ -111,6 +112,7 @@ class LoadoutSidebarProvider {
         webviewView.badge = count > 0
           ? { value: count, tooltip: `${count} catalog update${count !== 1 ? 's' : ''} available` }
           : undefined;
+        this._onAfterRefresh?.();
       },
     );
 

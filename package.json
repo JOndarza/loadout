@@ -73,6 +73,43 @@
         "mac": "cmd+shift+alt+c"
       }
     ],
+    "walkthroughs": [
+      {
+        "id": "loadout.gettingStarted",
+        "title": "Get started with Loadout",
+        "description": "Swap your Claude Code setup like equipment.",
+        "steps": [
+          {
+            "id": "openPanel",
+            "title": "Open the Loadout panel",
+            "description": "Click the Loadout icon in the Activity Bar (or press Cmd+Shift+Alt+C).\n[Open panel](command:loadout.openPanel)",
+            "media": { "markdown": "media/walkthrough-open.md" },
+            "completionEvents": ["onView:loadout.sidebarView"]
+          },
+          {
+            "id": "exploreWorkspace",
+            "title": "Toggle agents and skills",
+            "description": "Use the Workspace tab to toggle agents and skills active or inactive. Active items are loaded into every Claude Code session.\n[Open panel](command:loadout.openPanel)",
+            "media": { "markdown": "media/walkthrough-workspace.md" },
+            "completionEvents": ["onCommand:loadout.openPanel"]
+          },
+          {
+            "id": "applyProfile",
+            "title": "Apply a profile",
+            "description": "Save your current setup as a named loadout profile and switch between them in one click.\n[Apply a profile](command:loadout.applyProfile)",
+            "media": { "markdown": "media/walkthrough-profiles.md" },
+            "completionEvents": ["onCommand:loadout.applyProfile"]
+          },
+          {
+            "id": "configure",
+            "title": "Configure catalog path (optional)",
+            "description": "If your Claude Code catalog lives somewhere other than ~/.claude, set the path in Settings.\n[Open settings](command:workbench.action.openSettings?%5B%22loadout%22%5D)",
+            "media": { "markdown": "media/walkthrough-settings.md" },
+            "completionEvents": ["onSettingsEdited"]
+          }
+        ]
+      }
+    ],
     "configuration": {
       "title": "Loadout",
       "properties": {
