@@ -8,6 +8,7 @@ webview/coverage/
 webview/storybook-static/
 
 .claude/
+.claire/
 webview-dist/
 
 # OS
