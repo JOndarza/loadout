@@ -21,9 +21,10 @@ import { WorkspaceComponent } from '@features/workspace/workspace.component';
 import { ProfilesComponent } from '@features/profiles/profiles.component';
 import { CatalogComponent } from '@features/catalog/catalog.component';
 import { SettingsComponent } from '@features/settings/settings.component';
+import { ConfigComponent } from '@features/config/config.component';
 import { CommandPaletteComponent } from '@shared/overlays/command-palette.component';
 
-type TabId = 'workspace' | 'profiles' | 'catalog' | 'settings';
+type TabId = 'workspace' | 'profiles' | 'catalog' | 'config' | 'settings';
 
 @Component({
   selector: 'cm-shell',
@@ -34,6 +35,7 @@ type TabId = 'workspace' | 'profiles' | 'catalog' | 'settings';
     ProfilesComponent,
     CatalogComponent,
     SettingsComponent,
+    ConfigComponent,
     CommandPaletteComponent,
   ],
   templateUrl: './shell.component.html',
@@ -67,7 +69,7 @@ export class ShellComponent {
     // Wire keyboard shortcuts to UI actions
     this.shortcuts.events$.pipe(takeUntilDestroyed()).subscribe((e) => {
       if (e.type === 'tab') {
-        const tabs: TabId[] = ['workspace', 'profiles', 'catalog'];
+        const tabs: TabId[] = ['workspace', 'profiles', 'catalog', 'config'];
         this.activeTab.set(tabs[e.index]);
       } else if (e.type === 'search') {
         this.searchInput()?.nativeElement.focus();

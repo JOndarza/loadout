@@ -89,7 +89,7 @@ export class SettingsComponent {
       : 'Open folder';
 
   protected readonly shortcuts = [
-    { keys: ['1', '2', '3'], action: 'Switch tabs (Workspace · Profiles · Catalog)' },
+    { keys: ['1', '2', '3', '4'], action: 'Switch tabs (Workspace · Profiles · Catalog · Config)' },
     { keys: ['/'], action: 'Focus search' },
     { keys: [this.sc.modKey, 'K'], action: 'Open command palette' },
     { keys: ['a'], action: 'Toggle "Active only" filter in Workspace' },

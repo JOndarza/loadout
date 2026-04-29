@@ -2,7 +2,7 @@ import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 
 export type ShortcutEvent =
-  | { type: 'tab'; index: 0 | 1 | 2 }
+  | { type: 'tab'; index: 0 | 1 | 2 | 3 }
   | { type: 'palette' }
   | { type: 'search' }
   | { type: 'activeOnly' }
@@ -55,6 +55,7 @@ export class ShortcutsService {
     if (e.key === '1') this.events.next({ type: 'tab', index: 0 });
     else if (e.key === '2') this.events.next({ type: 'tab', index: 1 });
     else if (e.key === '3') this.events.next({ type: 'tab', index: 2 });
+    else if (e.key === '4') this.events.next({ type: 'tab', index: 3 });
     else if (e.key === '/') {
       e.preventDefault();
       this.events.next({ type: 'search' });

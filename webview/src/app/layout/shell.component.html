@@ -82,6 +82,16 @@
         <span class="cm-tab-label">Catalog</span>
         <span class="cm-tab-badge">{{ catalog.totalCount() }}</span>
       </button>
+      <button
+        type="button"
+        role="tab"
+        class="cm-tab"
+        [class.is-active]="activeTab() === 'config'"
+        [attr.aria-selected]="activeTab() === 'config'"
+        (click)="setTab('config')"
+      >
+        <span class="cm-tab-label">Config</span>
+      </button>
     </nav>
   </header>
 
@@ -116,6 +126,9 @@
       }
       @case ('catalog') {
         <cm-catalog [searchQuery]="searchQuery()" />
+      }
+      @case ('config') {
+        <cm-config />
       }
       @case ('settings') {
         <cm-settings />

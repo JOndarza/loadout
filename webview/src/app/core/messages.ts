@@ -11,11 +11,32 @@ export interface WorkspaceItem {
   memoryScope?: string | null;
 }
 
+export interface HookEntry {
+  event: string;
+  matcher: string;
+  type: string;
+  command?: string | null;
+  url?: string | null;
+  disabled: boolean;
+  groupIndex: number;
+  hookIndex: number;
+}
+
+export interface ClaudePermissions {
+  allow: string[];
+  deny: string[];
+  ask: string[];
+  additionalDirectories: string[];
+}
+
 export interface ClaudeSettings {
   model?: string | null;
   effortLevel?: string | null;
   autoMemoryEnabled?: boolean | null;
   env?: Record<string, string>;
+  permissions?: ClaudePermissions;
+  hooks?: HookEntry[];
+  sandboxEnabled?: boolean | null;
 }
 
 export interface MemoryFile {
@@ -115,7 +136,13 @@ export type WebviewMessage =
   | { command: 'updateClaudeSetting'; key: string; value: string | boolean | null }
   | { command: 'openMemoryFile'; path: string }
   | { command: 'addEnvVar'; key: string; value: string }
-  | { command: 'removeEnvVar'; key: string };
+  | { command: 'removeEnvVar'; key: string }
+  | { command: 'addPermissionRule'; ruleType: 'allow' | 'deny' | 'ask'; value: string }
+  | { command: 'removePermissionRule'; ruleType: 'allow' | 'deny' | 'ask'; value: string }
+  | { command: 'pickAndAddDirectory' }
+  | { command: 'removeDirectory'; path: string }
+  | { command: 'toggleHook'; event: string; groupIndex: number; hookIndex: number }
+  | { command: 'setSandboxEnabled'; enabled: boolean };
 
 // ─── Inbound (extension → webview) ───────────────────────────────────────────
 export type ExtensionMessage =

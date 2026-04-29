@@ -14,9 +14,18 @@ const { DEFAULT_REGISTRY_URL }                                               = r
 const { ALLOWED_ITEM_TYPES, isSafeName, isSafeArray, isAllowedExternalUrl } = require('./validators');
 const { checkRegistryStatus, runUpdateScript, parseUpdateOutput }            = require('./registry');
 const { log }                                                                = require('./logger');
-const { setClaudeSettingKey, addEnvVar, removeEnvVar }                      = require('./claude-settings');
+const {
+  setClaudeSettingKey, addEnvVar, removeEnvVar,
+  addPermissionRule, removePermissionRule, addDirectory, removeDirectory,
+  toggleHook, setSandboxEnabled,
+} = require('./claude-settings');
 
-const NO_ROOT_OK = new Set(['ready', 'updateSettings', 'openExternal', 'revealCatalog', 'testRegistry']);
+const NO_ROOT_OK = new Set([
+  'ready', 'updateSettings', 'openExternal', 'revealCatalog', 'testRegistry',
+  'updateClaudeSetting', 'openMemoryFile', 'addEnvVar', 'removeEnvVar',
+  'addPermissionRule', 'removePermissionRule', 'pickAndAddDirectory', 'removeDirectory',
+  'toggleHook', 'setSandboxEnabled',
+]);
 
 function handleMessage(msg, refresh, postToWebview, root, storePath) {
   if (!root && !NO_ROOT_OK.has(msg.command)) {
@@ -336,6 +345,40 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
     case 'removeEnvVar':
       if (typeof msg.key !== 'string') return;
       removeEnvVar(msg.key);
+      refresh();
+      break;
+
+    case 'addPermissionRule':
+      if (!['allow', 'deny', 'ask'].includes(msg.ruleType) || typeof msg.value !== 'string' || !msg.value.trim()) return;
+      addPermissionRule(msg.ruleType, msg.value.trim());
+      refresh();
+      break;
+
+    case 'removePermissionRule':
+      if (!['allow', 'deny', 'ask'].includes(msg.ruleType) || typeof msg.value !== 'string') return;
+      removePermissionRule(msg.ruleType, msg.value);
+      refresh();
+      break;
+
+    case 'pickAndAddDirectory':
+      vscode.window.showOpenDialog({ canSelectFiles: false, canSelectFolders: true, canSelectMany: false })
+        .then((uris) => { if (uris?.[0]) { addDirectory(uris[0].fsPath); refresh(); } });
+      break;
+
+    case 'removeDirectory':
+      if (typeof msg.path !== 'string') return;
+      removeDirectory(msg.path);
+      refresh();
+      break;
+
+    case 'toggleHook':
+      if (typeof msg.event !== 'string' || typeof msg.groupIndex !== 'number' || typeof msg.hookIndex !== 'number') return;
+      toggleHook(msg.event, msg.groupIndex, msg.hookIndex);
+      refresh();
+      break;
+
+    case 'setSandboxEnabled':
+      setSandboxEnabled(typeof msg.enabled === 'boolean' ? msg.enabled : null);
       refresh();
       break;
 

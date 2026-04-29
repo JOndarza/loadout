@@ -1,0 +1,127 @@
+<div class="cm-set">
+
+  <!-- ─── Permissions ──────────────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Permissions</h2>
+      <p class="cm-set-p">Tool rules for Claude Code sessions. Edits <code class="cm-set-code">~/.claude/settings.json</code>.</p>
+    </header>
+
+    @for (entry of [
+      { type: 'allow', rules: state.permissions().allow, draft: newAllowRule, add: addAllow.bind(this), remove: removeAllow.bind(this), ph: 'e.g. Bash(npm run *)' },
+      { type: 'deny',  rules: state.permissions().deny,  draft: newDenyRule,  add: addDeny.bind(this),  remove: removeDeny.bind(this),  ph: 'e.g. Bash(rm -rf *)' },
+      { type: 'ask',   rules: state.permissions().ask,   draft: newAskRule,   add: addAsk.bind(this),   remove: removeAsk.bind(this),   ph: 'e.g. WebFetch' }
+    ]; track entry.type) {
+      <div class="cm-set-row">
+        <label class="cm-set-label">{{ entry.type }}</label>
+        <div class="cm-set-control cm-set-control--stack">
+          <div class="cm-cfg-chips">
+            @for (rule of entry.rules; track rule) {
+              <span class="cm-cfg-chip cm-cfg-chip--{{ entry.type }}">
+                {{ rule }}
+                <button
+                  type="button"
+                  class="cm-cfg-chip-remove"
+                  (click)="entry.remove(rule)"
+                  [attr.aria-label]="'Remove ' + rule"
+                >✕</button>
+              </span>
+            }
+            @if (entry.rules.length === 0) {
+              <span class="cm-cfg-empty">None</span>
+            }
+          </div>
+          <div class="cm-cfg-add-row">
+            <input
+              type="text"
+              class="cm-set-input cm-set-input--sm"
+              [ngModel]="entry.draft()"
+              (ngModelChange)="entry.draft.set($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="entry.ph"
+              (keydown.enter)="entry.add()"
+              [attr.aria-label]="'New ' + entry.type + ' rule'"
+            />
+            <cm-button variant="secondary" size="sm" (click)="entry.add()">Add</cm-button>
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- ─── Additional directories ───────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Additional directories</h2>
+      <p class="cm-set-p">Extra directories Claude Code can read and write beyond the project root.</p>
+    </header>
+
+    @if (state.additionalDirs().length === 0) {
+      <p class="cm-set-hint cm-set-hint--padded">No additional directories configured.</p>
+    } @else {
+      @for (dir of state.additionalDirs(); track dir) {
+        <div class="cm-set-row">
+          <code class="cm-set-env-key">{{ dir }}</code>
+          <div class="cm-set-control">
+            <cm-button variant="ghost" size="sm" (click)="removeDir(dir)" [attr.aria-label]="'Remove ' + dir">Remove</cm-button>
+          </div>
+        </div>
+      }
+    }
+    <div class="cm-cfg-add-dir">
+      <cm-button variant="secondary" size="sm" (click)="pickDir()">＋ Add directory…</cm-button>
+    </div>
+  </section>
+
+  <!-- ─── Hooks ────────────────────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Hooks</h2>
+      <p class="cm-set-p">Shell commands or HTTP endpoints that fire at Claude Code lifecycle events.</p>
+    </header>
+
+    @if (state.hooks().length === 0) {
+      <p class="cm-set-hint cm-set-hint--padded">No hooks configured in <code>~/.claude/settings.json</code>.</p>
+    } @else {
+      @for (hook of state.hooks(); track hookKey(hook)) {
+        <div class="cm-set-row">
+          <div class="cm-cfg-hook-meta">
+            <span class="cm-cfg-hook-event">{{ hook.event }}</span>
+            @if (hook.matcher) {
+              <span class="cm-cfg-hook-matcher">{{ hook.matcher }}</span>
+            }
+          </div>
+          <div class="cm-set-control">
+            <code class="cm-cfg-hook-cmd">{{ hookLabel(hook) }}</code>
+            <cm-toggle
+              [checked]="!hook.disabled"
+              [ariaLabel]="(hook.disabled ? 'Enable' : 'Disable') + ' hook'"
+              (toggled)="toggleHook(hook)"
+            />
+          </div>
+        </div>
+      }
+    }
+  </section>
+
+  <!-- ─── Sandbox ──────────────────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Sandbox</h2>
+      <p class="cm-set-p">Run Claude Code bash commands inside an OS-level sandbox.</p>
+    </header>
+
+    <div class="cm-set-row">
+      <label class="cm-set-label">Enabled</label>
+      <div class="cm-set-control">
+        <cm-toggle
+          [checked]="state.sandboxEnabled()"
+          ariaLabel="Enable sandbox"
+          (toggled)="toggleSandbox()"
+        />
+        <p class="cm-set-hint">Changes take effect on the next Claude Code session.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
