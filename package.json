@@ -1,0 +1,69 @@
+{
+  "name": "loadout",
+  "displayName": "Loadout",
+  "description": "Swap your Claude Code setup like equipment. Manage agents, skills, and profiles with a polished panel.",
+  "version": "2.0.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["claude", "claude-code", "agents", "skills", "loadout", "profiles"],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "loadout-bar",
+          "title": "Loadout",
+          "icon": "./icon-activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "loadout-bar": [
+        {
+          "type": "webview",
+          "id": "loadout.sidebarView",
+          "name": "Loadout"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "loadout.openPanel",
+        "title": "Loadout: Open Panel",
+        "icon": "$(layers)"
+      },
+      {
+        "command": "loadout.refresh",
+        "title": "Loadout: Refresh",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "loadout.openPanel" },
+        { "command": "loadout.refresh" }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "loadout.openPanel",
+        "key": "ctrl+shift+alt+c",
+        "mac": "cmd+shift+alt+c"
+      }
+    ],
+    "configuration": {
+      "title": "Loadout",
+      "properties": {
+        "claudeManager.globalCatalogPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the global agents/skills catalog. Leave empty to use ~/.claude. (Setting key remains 'claudeManager.*' for backward compatibility with existing configs.)"
+        }
+      }
+    }
+  }
+}
