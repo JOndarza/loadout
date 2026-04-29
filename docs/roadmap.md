@@ -8,8 +8,8 @@ Per-workspace state migrated from legacy `.claude-store/` to VSCode `context.sto
 ## Phases
 
 ### Phase 1 — Core (done)
-- [x] Workspace tab: toggle agents/skills active/inactive
-- [x] Profiles tab: save, apply, rename, reorder, duplicate loadouts
+- [x] Workspace tab: toggle agents/skills/commands active/inactive
+- [x] Profiles tab: save, apply, rename, reorder, duplicate loadouts (agents, skills, and commands)
 - [x] Catalog tab: adopt from global catalog, push local items to global, hash-based sync detection
 - [x] Settings tab: density, theme, default tab, registry URL
 - [x] Angular 21 standalone + signals architecture

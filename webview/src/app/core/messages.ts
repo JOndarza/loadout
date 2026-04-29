@@ -1,5 +1,7 @@
 // ─── Messages exchanged between extension host and webview ───────────────────
 
+export type ItemType = 'agents' | 'skills' | 'commands';
+
 export interface WorkspaceItem {
   name: string;
   file: string;
@@ -20,6 +22,7 @@ export interface CatalogItem {
 export interface Profile {
   agents: string[];
   skills: string[];
+  commands?: string[];
   createdAt: string;
   order?: number;
 }
@@ -35,9 +38,11 @@ export interface InitialData {
   root: string;
   agents: WorkspaceItem[];
   skills: WorkspaceItem[];
+  commands: WorkspaceItem[];
   profiles: Record<string, Profile>;
   catalogAgents: CatalogItem[];
   catalogSkills: CatalogItem[];
+  catalogCommands: CatalogItem[];
   globalRoot: string;
   settings: Settings;
   vscodeThemeKind: 'dark' | 'light';
@@ -47,7 +52,7 @@ export interface InitialData {
 export interface RegistryItem {
   name: string;
   file: string;
-  itemType: 'agents' | 'skills' | 'commands';
+  itemType: ItemType;
   status: 'updatable' | 'custom';
 }
 
@@ -55,17 +60,17 @@ export interface RegistryItem {
 export type WebviewMessage =
   | { command: 'ready' }
   | { command: 'setTab'; tab: string }
-  | { command: 'toggle'; type: 'agents' | 'skills'; file: string; wasActive: boolean }
-  | { command: 'enableAll'; type: 'agents' | 'skills' }
-  | { command: 'disableAll'; type: 'agents' | 'skills' }
-  | { command: 'addFromGlobal'; itemType: 'agents' | 'skills'; file: string }
-  | { command: 'pushToGlobal'; itemType: 'agents' | 'skills'; file: string }
+  | { command: 'toggle'; type: ItemType; file: string; wasActive: boolean }
+  | { command: 'enableAll'; type: ItemType }
+  | { command: 'disableAll'; type: ItemType }
+  | { command: 'addFromGlobal'; itemType: ItemType; file: string }
+  | { command: 'pushToGlobal'; itemType: ItemType; file: string }
   | { command: 'saveProfile'; name: string }
   | { command: 'applyProfile'; name: string; silent?: boolean }
   | { command: 'deleteProfile'; name: string }
   | { command: 'renameProfile'; from: string; to: string }
   | { command: 'reorderProfiles'; order: string[] }
-  | { command: 'updateProfileItems'; name: string; agents: string[]; skills: string[] }
+  | { command: 'updateProfileItems'; name: string; agents: string[]; skills: string[]; commands: string[] }
   | { command: 'duplicateProfile'; from: string; to: string }
   | { command: 'updateSettings'; settings: Partial<Settings> }
   | { command: 'revealCatalog' }
@@ -74,7 +79,7 @@ export type WebviewMessage =
   | { command: 'runUpdate' }
   | { command: 'refresh' }
   | { command: 'openExternal'; url: string }
-  | { command: 'bulkToggle'; items: Array<{ type: 'agents' | 'skills'; file: string; wasActive: boolean }> };
+  | { command: 'bulkToggle'; items: Array<{ type: ItemType; file: string; wasActive: boolean }> };
 
 // ─── Inbound (extension → webview) ───────────────────────────────────────────
 export type ExtensionMessage =

@@ -62,6 +62,7 @@
               <div class="cm-profiles-meta">
                 <strong>{{ p.agents.length }}</strong> agents ·
                 <strong>{{ p.skills.length }}</strong> skills ·
+                <strong>{{ p.commands.length }}</strong> commands ·
                 {{ formatDate(p.createdAt) }}
               </div>
             </div>
@@ -114,6 +115,23 @@
                   }
                 </div>
               </div>
+              @if (workspace.commands().length > 0) {
+                <div class="cm-profiles-edit-section">
+                  <div class="cm-profiles-edit-label">Commands</div>
+                  <div class="cm-profiles-chips">
+                    @for (c of workspace.commands(); track c.file) {
+                      <button
+                        type="button"
+                        class="cm-profiles-chip cm-profiles-chip--command"
+                        [class.is-on]="isEditCommandOn(c.file)"
+                        (click)="toggleEditCommand(c.file)"
+                      >
+                        {{ c.name }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
               <div class="cm-profiles-edit-actions">
                 <cm-button variant="ghost" size="sm" (click)="cancelEdit()">Cancel</cm-button>
                 <cm-button variant="primary" size="sm" (click)="commitEdit()">Save changes</cm-button>

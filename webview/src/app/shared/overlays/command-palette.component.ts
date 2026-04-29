@@ -66,13 +66,22 @@ export class CommandPaletteComponent {
         run: () => this.bridge.send({ command: 'toggle', type: 'skills', file: s.file, wasActive: s.active }),
       });
     }
+    for (const c of this.workspace.commands()) {
+      cmds.push({
+        key: `toggle-command-${c.file}`,
+        label: `${c.active ? 'Disable' : 'Enable'} ${c.name}`,
+        hint: `command · ${c.tokens} tok`,
+        category: 'toggle',
+        run: () => this.bridge.send({ command: 'toggle', type: 'commands', file: c.file, wasActive: c.active }),
+      });
+    }
 
     // Apply profiles
     for (const p of this.profiles.entries()) {
       cmds.push({
         key: `apply-${p.name}`,
         label: `Apply loadout: ${p.name}`,
-        hint: `${p.agents.length}a · ${p.skills.length}s`,
+        hint: `${p.agents.length}a · ${p.skills.length}s · ${p.commands.length}c`,
         category: 'profile',
         run: () => this.bridge.send({ command: 'applyProfile', name: p.name, silent: true }),
       });
@@ -83,7 +92,7 @@ export class CommandPaletteComponent {
       cmds.push({
         key: `adopt-${c.type}-${c.file}`,
         label: `Adopt ${c.name}`,
-        hint: `${c.type === 'agents' ? 'agent' : 'skill'} · catalog`,
+        hint: `${{ agents: 'agent', skills: 'skill', commands: 'command' }[c.type]} · catalog`,
         category: 'catalog',
         run: () => this.bridge.send({ command: 'addFromGlobal', itemType: c.type, file: c.file }),
       });

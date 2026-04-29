@@ -238,6 +238,11 @@ cm-profiles {
     background: rgba(0, 227, 253, 0.12);
     @include ring(rgba(0, 227, 253, 0.4));
   }
+
+  &--command.is-on {
+    background: rgba(167, 139, 250, 0.12);
+    @include ring(rgba(167, 139, 250, 0.4));
+  }
 }
 
 [data-theme='light'] .cm-profiles-chip {

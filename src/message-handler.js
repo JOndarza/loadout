@@ -64,6 +64,7 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
       profiles[name] = {
         agents:    getItems(root, storePath, 'agents').filter(a => a.active).map(a => a.file),
         skills:    getItems(root, storePath, 'skills').filter(s => s.active).map(s => s.file),
+        commands:  getItems(root, storePath, 'commands').filter(c => c.active).map(c => c.file),
         createdAt: existing.createdAt || new Date().toISOString(),
         order:     existing.order ?? Object.keys(profiles).length,
       };
@@ -84,6 +85,10 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
       for (const s of getItems(root, storePath, 'skills')) {
         if (s.active !== profile.skills.includes(s.file))
           toggleItem(root, storePath, 'skills', s.file, s.active);
+      }
+      for (const c of getItems(root, storePath, 'commands')) {
+        if (c.active !== (profile.commands ?? []).includes(c.file))
+          toggleItem(root, storePath, 'commands', c.file, c.active);
       }
       refresh();
       if (!msg.silent) vscode.window.showInformationMessage(`Loadout "${msg.name}" applied`);
@@ -112,8 +117,8 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
       break;
 
     case 'updateProfileItems':
-      if (!isSafeName(msg.name) || !isSafeArray(msg.agents) || !isSafeArray(msg.skills)) return;
-      updateProfileItems(storePath, msg.name, { agents: msg.agents, skills: msg.skills });
+      if (!isSafeName(msg.name) || !isSafeArray(msg.agents) || !isSafeArray(msg.skills) || !isSafeArray(msg.commands ?? [])) return;
+      updateProfileItems(storePath, msg.name, { agents: msg.agents, skills: msg.skills, commands: msg.commands ?? [] });
       refresh();
       break;
 

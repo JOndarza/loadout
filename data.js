@@ -266,11 +266,12 @@ function reorderProfiles(storePath, names) {
   saveProfiles(storePath, profiles);
 }
 
-function updateProfileItems(storePath, name, { agents, skills }) {
+function updateProfileItems(storePath, name, { agents, skills, commands }) {
   const profiles = getProfiles(storePath);
   if (!profiles[name]) return;
-  if (Array.isArray(agents)) profiles[name].agents = agents;
-  if (Array.isArray(skills)) profiles[name].skills = skills;
+  if (Array.isArray(agents))   profiles[name].agents   = agents;
+  if (Array.isArray(skills))   profiles[name].skills   = skills;
+  if (Array.isArray(commands)) profiles[name].commands = commands;
   saveProfiles(storePath, profiles);
 }
 
@@ -278,8 +279,9 @@ function duplicateProfile(storePath, from, to) {
   const profiles = getProfiles(storePath);
   if (!profiles[from] || profiles[to]) return;
   profiles[to] = {
-    agents:    [...(profiles[from].agents || [])],
-    skills:    [...(profiles[from].skills || [])],
+    agents:    [...(profiles[from].agents   || [])],
+    skills:    [...(profiles[from].skills   || [])],
+    commands:  [...(profiles[from].commands || [])],
     createdAt: new Date().toISOString(),
     order:     Object.keys(profiles).length,
   };

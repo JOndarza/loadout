@@ -40,7 +40,7 @@ Loadout is a VSCode extension with two separate runtime processes:
 | `src/constants.js` | `DEFAULT_REGISTRY_URL` |
 
 **Data layer**: `data.js`
-- All reads/writes to `.claude/agents/`, `.claude/skills/`, `profiles.json`, `ui-state.json`, and catalog
+- All reads/writes to `.claude/agents/`, `.claude/skills/`, `.claude/commands/`, `profiles.json`, `ui-state.json`, and catalog
 - `toggleItem()` — moves files between active dir and managed store in `context.storageUri`
 - `getCatalogItems()` — lists global catalog items with hash-based sync status
 - `pushToGlobal()` / `copyFromGlobal()` — catalog promotion/adoption flows
@@ -66,7 +66,7 @@ Loadout is a VSCode extension with two separate runtime processes:
 webview/src/app/
 ├── core/
 │   ├── state/
-│   │   ├── workspace.state.ts    # agents + skills toggle state
+│   │   ├── workspace.state.ts    # agents + skills + commands toggle state
 │   │   ├── profiles.state.ts     # profile list + apply/save
 │   │   ├── catalog.state.ts      # catalog items + sync status
 │   │   └── settings.state.ts     # density, theme, defaultTab, registryUrl
@@ -110,12 +110,12 @@ Message types are defined in `messages.ts` and are the single source of truth.
 | Command | When |
 | --- | --- |
 | `ready` | Angular app bootstrapped |
-| `toggle` | User enables/disables a single agent or skill |
+| `toggle` | User enables/disables a single agent, skill, or command |
 | `bulkToggle` | User enables/disables multiple items at once |
 | `saveProfile` | User saves the current state as a named profile |
 | `applyProfile` | User applies a saved profile |
 | `renameProfile` / `deleteProfile` / `reorderProfiles` | Profile management |
-| `updateProfileItems` | Edits the agent/skill list of an existing profile |
+| `updateProfileItems` | Edits the agent/skill/command list of an existing profile |
 | `duplicateProfile` | Copies an existing profile under a new name |
 | `addFromGlobal` / `pushToGlobal` | Catalog adopt/promote |
 | `checkRegistry` | Fetches registry and compares against local items |
@@ -148,12 +148,15 @@ WorkspaceStateService / ProfilesStateService / CatalogStateService / SettingsSta
 |---|---|
 | `.claude/agents/` (workspace) | Active agents for this workspace |
 | `.claude/skills/` (workspace) | Active skills for this workspace |
+| `.claude/commands/` (workspace) | Active commands for this workspace |
 | `context.storageUri/.claude-store/agents/` | Inactive agent files |
 | `context.storageUri/.claude-store/skills/` | Inactive skill files |
+| `context.storageUri/.claude-store/commands/` | Inactive command files |
 | `context.storageUri/profiles.json` | Named loadout snapshots |
 | `context.storageUri/ui-state.json` | Last active tab, density, etc. |
 | `~/.claude/agents/` (globalRoot) | Global catalog agents |
 | `~/.claude/skills/` (globalRoot) | Global catalog skills |
+| `~/.claude/commands/` (globalRoot) | Global catalog commands |
 | `~/.claude/.claude-hashes.json` | Hash store for sync detection |
 
 ## Security

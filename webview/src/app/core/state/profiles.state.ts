@@ -5,6 +5,7 @@ export interface ProfileEntry {
   name: string;
   agents: string[];
   skills: string[];
+  commands: string[];
   createdAt: string;
   order: number;
 }
@@ -21,8 +22,9 @@ export class ProfilesState {
     return Object.entries(this._profiles())
       .map(([name, p], idx) => ({
         name,
-        agents: p.agents ?? [],
-        skills: p.skills ?? [],
+        agents:   p.agents   ?? [],
+        skills:   p.skills   ?? [],
+        commands: p.commands ?? [],
         createdAt: p.createdAt ?? '',
         order: p.order ?? idx,
       }))

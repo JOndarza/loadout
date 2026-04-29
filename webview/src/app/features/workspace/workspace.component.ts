@@ -11,11 +11,11 @@ import {
   CopyToClipboardDirective,
   type SegmentedOption,
 } from '../../shared/primitives';
-import type { WorkspaceItem } from '../../core/messages';
+import type { ItemType, WorkspaceItem } from '../../core/messages';
 
-type ItemKind = 'all' | 'agents' | 'skills';
+type ItemKind = 'all' | ItemType;
 interface RowItem extends WorkspaceItem {
-  type: 'agents' | 'skills';
+  type: ItemType;
 }
 
 @Component({
@@ -46,15 +46,17 @@ export class WorkspaceComponent {
   private lastClickedKey = '';
 
   protected readonly kindOptions = computed<SegmentedOption<ItemKind>[]>(() => [
-    { value: 'all', label: 'All', count: this.state.totalCount() },
-    { value: 'agents', label: 'Agents', count: this.state.agents().length },
-    { value: 'skills', label: 'Skills', count: this.state.skills().length },
+    { value: 'all',      label: 'All',      count: this.state.totalCount() },
+    { value: 'agents',   label: 'Agents',   count: this.state.agents().length },
+    { value: 'skills',   label: 'Skills',   count: this.state.skills().length },
+    { value: 'commands', label: 'Commands', count: this.state.commands().length },
   ]);
 
   protected readonly allItems = computed<RowItem[]>(() => {
-    const a = this.state.agents().map((i) => ({ ...i, type: 'agents' as const }));
-    const s = this.state.skills().map((i) => ({ ...i, type: 'skills' as const }));
-    return [...a, ...s].sort((x, y) => x.name.localeCompare(y.name));
+    const a = this.state.agents().map((i)   => ({ ...i, type: 'agents'   as const }));
+    const s = this.state.skills().map((i)   => ({ ...i, type: 'skills'   as const }));
+    const c = this.state.commands().map((i) => ({ ...i, type: 'commands' as const }));
+    return [...a, ...s, ...c].sort((x, y) => x.name.localeCompare(y.name));
   });
 
   protected readonly visibleItems = computed<RowItem[]>(() => {

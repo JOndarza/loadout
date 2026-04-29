@@ -23,7 +23,7 @@ export class ProfilesComponent {
 
   protected readonly newName = signal('');
   protected readonly editingName = signal<string | null>(null);
-  protected readonly editingItems = signal<{ agents: Set<string>; skills: Set<string> } | null>(null);
+  protected readonly editingItems = signal<{ agents: Set<string>; skills: Set<string>; commands: Set<string> } | null>(null);
   protected readonly renameTo = signal<string>('');
   protected readonly renamingFrom = signal<string | null>(null);
 
@@ -94,8 +94,9 @@ export class ProfilesComponent {
   protected startEdit(p: ProfileEntry): void {
     this.editingName.set(p.name);
     this.editingItems.set({
-      agents: new Set(p.agents),
-      skills: new Set(p.skills),
+      agents:   new Set(p.agents),
+      skills:   new Set(p.skills),
+      commands: new Set(p.commands),
     });
   }
 
@@ -105,7 +106,7 @@ export class ProfilesComponent {
     const next = new Set(items.agents);
     if (next.has(file)) next.delete(file);
     else next.add(file);
-    this.editingItems.set({ agents: next, skills: items.skills });
+    this.editingItems.set({ agents: next, skills: items.skills, commands: items.commands });
   }
 
   protected toggleEditSkill(file: string): void {
@@ -114,7 +115,16 @@ export class ProfilesComponent {
     const next = new Set(items.skills);
     if (next.has(file)) next.delete(file);
     else next.add(file);
-    this.editingItems.set({ agents: items.agents, skills: next });
+    this.editingItems.set({ agents: items.agents, skills: next, commands: items.commands });
+  }
+
+  protected toggleEditCommand(file: string): void {
+    const items = this.editingItems();
+    if (!items) return;
+    const next = new Set(items.commands);
+    if (next.has(file)) next.delete(file);
+    else next.add(file);
+    this.editingItems.set({ agents: items.agents, skills: items.skills, commands: next });
   }
 
   protected isEditAgentOn(file: string): boolean {
@@ -125,6 +135,10 @@ export class ProfilesComponent {
     return this.editingItems()?.skills.has(file) ?? false;
   }
 
+  protected isEditCommandOn(file: string): boolean {
+    return this.editingItems()?.commands.has(file) ?? false;
+  }
+
   protected commitEdit(): void {
     const name = this.editingName();
     const items = this.editingItems();
@@ -132,8 +146,9 @@ export class ProfilesComponent {
     this.bridge.send({
       command: 'updateProfileItems',
       name,
-      agents: Array.from(items.agents),
-      skills: Array.from(items.skills),
+      agents:   Array.from(items.agents),
+      skills:   Array.from(items.skills),
+      commands: Array.from(items.commands),
     });
     this.cancelEdit();
   }

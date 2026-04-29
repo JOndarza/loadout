@@ -37,6 +37,16 @@
     >
       Skills <span class="cm-cat-chip-count">{{ counts().skills }}</span>
     </button>
+    @if (counts().commands > 0) {
+      <button
+        type="button"
+        class="cm-cat-chip"
+        [class.is-on]="filter() === 'commands'"
+        (click)="setFilter('commands')"
+      >
+        Commands <span class="cm-cat-chip-count">{{ counts().commands }}</span>
+      </button>
+    }
     @if (counts().updated > 0) {
       <button
         type="button"

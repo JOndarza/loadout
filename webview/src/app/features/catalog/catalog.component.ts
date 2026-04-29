@@ -11,16 +11,16 @@ import {
   CmTokenBarComponent,
   CopyToClipboardDirective,
 } from '../../shared/primitives';
-import type { CatalogItem, RegistryItem, WorkspaceItem } from '../../core/messages';
+import type { CatalogItem, ItemType, RegistryItem, WorkspaceItem } from '../../core/messages';
 
-type FilterChip = 'all' | 'agents' | 'skills' | 'updated' | 'local-only';
+type FilterChip = 'all' | ItemType | 'updated' | 'local-only';
 
 interface CatalogRow extends CatalogItem {
-  type: 'agents' | 'skills';
+  type: ItemType;
 }
 
 interface LocalOnlyRow extends WorkspaceItem {
-  type: 'agents' | 'skills';
+  type: ItemType;
 }
 
 @Component({
@@ -64,8 +64,9 @@ export class CatalogComponent {
   protected readonly localOnlyRows = computed<LocalOnlyRow[]>(() => {
     const catalogFiles = new Set(this.state.all().map((i) => i.file));
     const local: LocalOnlyRow[] = [
-      ...this.workspace.agents().map((a) => ({ ...a, type: 'agents' as const })),
-      ...this.workspace.skills().map((s) => ({ ...s, type: 'skills' as const })),
+      ...this.workspace.agents().map((a)   => ({ ...a, type: 'agents'   as const })),
+      ...this.workspace.skills().map((s)   => ({ ...s, type: 'skills'   as const })),
+      ...this.workspace.commands().map((c) => ({ ...c, type: 'commands' as const })),
     ];
     return local.filter((i) => !catalogFiles.has(i.file));
   });
@@ -75,10 +76,18 @@ export class CatalogComponent {
     const q = this.searchQuery().toLowerCase().trim();
     let rows = this.catalogRows();
 
-    if (f === 'agents') rows = rows.filter((r) => r.type === 'agents');
-    else if (f === 'skills') rows = rows.filter((r) => r.type === 'skills');
-    else if (f === 'updated') rows = rows.filter((r) => r.syncStatus === 'sharedUpdated');
-    else if (f === 'local-only') return [];
+    switch (f) {
+      case 'agents':
+      case 'skills':
+      case 'commands':
+        rows = rows.filter((r) => r.type === f);
+        break;
+      case 'updated':
+        rows = rows.filter((r) => r.syncStatus === 'sharedUpdated');
+        break;
+      case 'local-only':
+        return [];
+    }
 
     if (q) {
       rows = rows.filter((r) =>
@@ -102,13 +111,14 @@ export class CatalogComponent {
 
   protected readonly counts = computed(() => {
     const rows = this.catalogRows();
-    let agents = 0, skills = 0, updated = 0;
+    let agents = 0, skills = 0, commands = 0, updated = 0;
     for (const r of rows) {
-      if (r.type === 'agents') agents++;
-      else if (r.type === 'skills') skills++;
+      if (r.type === 'agents')        agents++;
+      else if (r.type === 'skills')   skills++;
+      else if (r.type === 'commands') commands++;
       if (r.syncStatus === 'sharedUpdated') updated++;
     }
-    return { all: rows.length, agents, skills, updated, localOnly: this.localOnlyRows().length };
+    return { all: rows.length, agents, skills, commands, updated, localOnly: this.localOnlyRows().length };
   });
 
   constructor() {

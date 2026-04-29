@@ -38,19 +38,21 @@ export class DataSyncService {
   private applyData(data: InitialData): void {
     this._root.set(data.root);
     this._version.set(data.extensionVersion);
-    this.workspace.setAll(data.agents, data.skills);
+    this.workspace.setAll(data.agents, data.skills, data.commands ?? []);
     this.profiles.setAll(data.profiles);
-    this.catalog.setAll(data.catalogAgents, data.catalogSkills, data.globalRoot);
+    this.catalog.setAll(data.catalogAgents, data.catalogSkills, data.catalogCommands ?? [], data.globalRoot);
     this.settings.setAll(data.settings);
 
     // Resolve active profile using Set comparison (handles filenames with commas, stable order)
-    const activeAgents = new Set(data.agents.filter((a) => a.active).map((a) => a.file));
-    const activeSkills = new Set(data.skills.filter((s) => s.active).map((s) => s.file));
+    const activeAgents   = new Set(data.agents.filter((a) => a.active).map((a) => a.file));
+    const activeSkills   = new Set(data.skills.filter((s) => s.active).map((s) => s.file));
+    const activeCommands = new Set((data.commands ?? []).filter((c) => c.active).map((c) => c.file));
     const sorted = Object.entries(data.profiles).sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
     const found = sorted.find(
       ([, p]) =>
-        this.setsEqual(activeAgents, new Set(p.agents ?? [])) &&
-        this.setsEqual(activeSkills, new Set(p.skills ?? [])),
+        this.setsEqual(activeAgents,   new Set(p.agents   ?? [])) &&
+        this.setsEqual(activeSkills,   new Set(p.skills   ?? [])) &&
+        this.setsEqual(activeCommands, new Set(p.commands ?? [])),
     );
     this.profiles.setActiveName(found?.[0] ?? null);
   }
