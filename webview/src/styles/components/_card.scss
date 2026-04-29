@@ -1,0 +1,93 @@
+// =============================================================================
+// Components — cm-card
+// =============================================================================
+
+@use '../abstracts' as *;
+
+cm-card {
+  display: block;
+  margin-bottom: var(--sp-3);
+}
+
+// Stagger delays for list items — scoped so the animation only fires inside
+// the main workspace/catalog lists, not on every cm-card in the app.
+.cm-ws-list > li,
+.cm-cat-list > li,
+.cm-profiles-list > li {
+  @include stagger-list;
+}
+
+.cm-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  transition:
+    background var(--t-fast),
+    box-shadow var(--t-fast),
+    transform var(--t-fast);
+  @include ring(rgba(255, 255, 255, 0.06));
+
+  &:hover {
+    @include ring(rgba(255, 255, 255, 0.18));
+  }
+
+  &.is-active {
+    animation: cm-card-activate 500ms cubic-bezier(0.4, 0, 0.2, 1) both;
+    background: rgba(var(--primary-rgb), 0.06);
+    @include ring(rgba(var(--primary-rgb), 0.3));
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: var(--sp-3);
+      bottom: var(--sp-3);
+      width: 3px;
+      border-radius: var(--r-full);
+      background: linear-gradient(180deg, var(--primary), var(--gold));
+      box-shadow: 0 0 12px rgba(var(--primary-rgb), 0.5);
+    }
+  }
+
+  &.is-disabled {
+    opacity: 0.5;
+    filter: saturate(0.6);
+  }
+
+  &.is-selected {
+    @include ring(rgba(var(--gold-rgb), 0.5));
+    box-shadow:
+      0 0 0 1px rgba(var(--gold-rgb), 0.5),
+      0 0 0 4px rgba(var(--gold-rgb), 0.12);
+  }
+
+  &[data-variant='catalog'] {
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  @include at-xs {
+    padding: var(--sp-3) var(--sp-3);
+    gap: var(--sp-3);
+  }
+}
+
+[data-theme='light'] .cm-card {
+  @include ring(rgba(0, 0, 0, 0.06));
+
+  &:hover {
+    @include ring(rgba(0, 0, 0, 0.18));
+  }
+
+  &.is-active {
+    background: rgba(var(--primary-rgb), 0.05);
+    @include ring(rgba(var(--primary-rgb), 0.3));
+  }
+
+  &[data-variant='catalog'] {
+    background: rgba(0, 0, 0, 0.015);
+  }
+}

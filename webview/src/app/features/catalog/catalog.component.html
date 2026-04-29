@@ -1,0 +1,221 @@
+<div class="cm-cat">
+  <header class="cm-cat-hero">
+    <div class="cm-cat-hero-left">
+      <div class="cm-cat-hero-eyebrow">Cross-project bridge</div>
+      <h2 class="cm-cat-hero-title">{{ counts().all }} items in your global catalog</h2>
+      <code class="cm-cat-hero-path">{{ state.globalRoot() }}</code>
+    </div>
+    <div class="cm-cat-hero-right">
+      <cm-button variant="secondary" size="sm" (click)="toggleRegistry()">
+        {{ registryOpen() ? 'Hide registry' : 'Registry' }}
+      </cm-button>
+    </div>
+  </header>
+
+  <div class="cm-cat-chips">
+    <button
+      type="button"
+      class="cm-cat-chip"
+      [class.is-on]="filter() === 'all'"
+      (click)="setFilter('all')"
+    >
+      All <span class="cm-cat-chip-count">{{ counts().all }}</span>
+    </button>
+    <button
+      type="button"
+      class="cm-cat-chip"
+      [class.is-on]="filter() === 'agents'"
+      (click)="setFilter('agents')"
+    >
+      Agents <span class="cm-cat-chip-count">{{ counts().agents }}</span>
+    </button>
+    <button
+      type="button"
+      class="cm-cat-chip"
+      [class.is-on]="filter() === 'skills'"
+      (click)="setFilter('skills')"
+    >
+      Skills <span class="cm-cat-chip-count">{{ counts().skills }}</span>
+    </button>
+    @if (counts().updated > 0) {
+      <button
+        type="button"
+        class="cm-cat-chip cm-cat-chip--gold"
+        [class.is-on]="filter() === 'updated'"
+        (click)="setFilter('updated')"
+      >
+        Updates <span class="cm-cat-chip-count">{{ counts().updated }}</span>
+      </button>
+    }
+    @if (counts().localOnly > 0) {
+      <button
+        type="button"
+        class="cm-cat-chip cm-cat-chip--info"
+        [class.is-on]="filter() === 'local-only'"
+        (click)="setFilter('local-only')"
+      >
+        Local only <span class="cm-cat-chip-count">{{ counts().localOnly }}</span>
+      </button>
+    }
+  </div>
+
+  @if (filter() === 'local-only') {
+    @if (visibleLocalOnly().length === 0) {
+      <cm-empty
+        icon="✓"
+        title="No local-only items"
+        description="Every agent and skill in this project is already mirrored in your global catalog."
+      />
+    } @else {
+      <ul class="cm-cat-list" role="list">
+        @for (item of visibleLocalOnly(); track key(item)) {
+          <li>
+            <cm-card variant="catalog">
+              <span class="cm-cat-type" [attr.data-type]="item.type">
+                {{ item.type === 'agents' ? 'AGT' : 'SKL' }}
+              </span>
+              <div class="cm-cat-info">
+                <div class="cm-cat-name" [cmCopy]="item.name" title="Click to copy">{{ item.name }}</div>
+                @if (item.description) {
+                  <div class="cm-cat-desc">{{ item.description }}</div>
+                }
+              </div>
+              <cm-token-bar [tokens]="item.tokens" />
+              <cm-button variant="primary" size="sm" (click)="pushLocal(item)">
+                Promote
+              </cm-button>
+            </cm-card>
+          </li>
+        }
+      </ul>
+    }
+  } @else if (visibleCatalog().length === 0) {
+    <cm-empty
+      icon="◇"
+      title="Catalog is empty"
+      description="Promote agents and skills from your projects to the global catalog so you can adopt them across all your workspaces."
+    />
+  } @else {
+    <ul class="cm-cat-list" role="list">
+      @for (item of visibleCatalog(); track key(item)) {
+        <li>
+          <cm-card
+            variant="catalog"
+            [active]="item.inProject && item.syncStatus === 'synced'"
+            [selected]="isSelected(item)"
+            (click)="!item.inProject && toggleSelect(item)"
+          >
+            <span class="cm-cat-type" [attr.data-type]="item.type">
+              {{ item.type === 'agents' ? 'AGT' : 'SKL' }}
+            </span>
+            <div class="cm-cat-info">
+              <div class="cm-cat-name" [cmCopy]="item.name" title="Click to copy">
+                {{ item.name }}
+                @if (item.inProject) {
+                  <cm-sync-pill [status]="item.syncStatus" />
+                }
+              </div>
+              @if (item.description) {
+                <div class="cm-cat-desc">{{ item.description }}</div>
+              }
+            </div>
+            <cm-token-bar [tokens]="item.tokens" />
+            @if (!item.inProject) {
+              <cm-button variant="gold" size="sm" (click)="pull(item); $event.stopPropagation()">
+                + Adopt
+              </cm-button>
+            } @else if (item.syncStatus === 'localModified' || item.syncStatus === 'diverged') {
+              <div class="cm-cat-dual-cta">
+                <cm-button variant="ghost" size="sm" (click)="pushLocal(item)" title="Push local to catalog">↑ Push</cm-button>
+                <cm-button variant="ghost" size="sm" (click)="pull(item)" title="Pull catalog version">↓ Pull</cm-button>
+              </div>
+            } @else if (item.syncStatus === 'sharedUpdated') {
+              <cm-button variant="gold" size="sm" (click)="pull(item)">↓ Pull</cm-button>
+            } @else {
+              <span class="cm-cat-installed">Installed</span>
+            }
+          </cm-card>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (selected().size > 0) {
+    <div class="cm-cat-bulk-bar" role="region" aria-label="Bulk adopt">
+      <span class="cm-cat-bulk-count">{{ selected().size }} selected</span>
+      <span class="cm-cat-bulk-spacer"></span>
+      <cm-button variant="ghost" size="sm" (click)="clearSelection()">Cancel</cm-button>
+      <cm-button variant="gold" size="sm" (click)="bulkAdopt()">+ Adopt {{ selected().size }}</cm-button>
+    </div>
+  }
+
+  @if (registryOpen()) {
+    <section class="cm-cat-registry" aria-label="Template registry">
+      <header class="cm-cat-registry-head">
+        <h3>Template Registry</h3>
+        <p>Sync your catalog from <code>aitmpl.com</code>. Loadout marks each item as updatable, custom, or out-of-registry.</p>
+      </header>
+      <div class="cm-cat-registry-actions">
+        <cm-button variant="secondary" size="sm" (click)="checkRegistry()" [disabled]="registryLoading()">
+          {{ registryLoading() ? 'Checking…' : 'Check status' }}
+        </cm-button>
+        <cm-button variant="primary" size="sm" (click)="runUpdate()" [disabled]="updateRunning()">
+          {{ updateRunning() ? 'Updating…' : 'Update all' }}
+        </cm-button>
+      </div>
+
+      @if (registryError()) {
+        <div class="cm-cat-registry-error">⚠ {{ registryError() }}</div>
+      }
+
+      @if (registryLoading() && registryItems().length === 0) {
+        <ul class="cm-cat-skeleton-list" aria-hidden="true">
+          @for (_ of [1,2,3,4,5]; track $index) {
+            <li class="cm-cat-skeleton-row">
+              <span class="cm-skeleton cm-skeleton-type"></span>
+              <span class="cm-skeleton cm-skeleton-name"></span>
+              <span class="cm-skeleton cm-skeleton-badge"></span>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (registryItems().length > 0) {
+        <ul class="cm-cat-registry-list" role="list">
+          @for (it of registryItems(); track it.file) {
+            <li class="cm-cat-registry-row">
+              <span class="cm-cat-registry-type">{{ it.itemType === 'agents' ? 'agent' : it.itemType === 'commands' ? 'cmd' : 'skill' }}</span>
+              <span class="cm-cat-registry-name">{{ it.name }}</span>
+              <span class="cm-cat-registry-status" [attr.data-status]="it.status">
+                {{ it.status === 'updatable' ? '✓ in registry' : it.status === 'custom' ? '◌ custom' : '✗ failed' }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (updateResult(); as res) {
+        <div class="cm-cat-registry-result">
+          @if (res.updated.length > 0) {
+            <div class="cm-cat-registry-result-group">
+              <strong>✓ Updated ({{ res.updated.length }})</strong>
+              <ul>@for (n of res.updated; track n) { <li>{{ n }}</li> }</ul>
+            </div>
+          }
+          @if (res.skipped.length > 0) {
+            <div class="cm-cat-registry-result-group">
+              <strong>↷ Skipped ({{ res.skipped.length }})</strong>
+              <ul>@for (n of res.skipped; track n) { <li>{{ n }}</li> }</ul>
+            </div>
+          }
+          @if (res.failed.length > 0) {
+            <div class="cm-cat-registry-result-group">
+              <strong>✗ Not updated ({{ res.failed.length }})</strong>
+              <ul>@for (n of res.failed; track n) { <li>{{ n }}</li> }</ul>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

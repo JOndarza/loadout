@@ -1,0 +1,58 @@
+@if (open()) {
+  <div
+    class="cm-pal-backdrop"
+    (click)="close()"
+    role="presentation"
+  ></div>
+
+  <div class="cm-pal" role="dialog" aria-label="Command palette" aria-modal="true">
+    <div class="cm-pal-input-wrap">
+      <span class="cm-pal-input-icon" aria-hidden="true">{{ shortcuts.modKey }}</span>
+      <input
+        #input
+        type="text"
+        class="cm-pal-input"
+        [ngModel]="query()"
+        (ngModelChange)="onInput($event)"
+        (keydown)="onKeyDown($any($event))"
+        placeholder="Toggle agents · apply loadouts · adopt from catalog…"
+        [ngModelOptions]="{ standalone: true }"
+        aria-label="Command palette search"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <kbd class="cm-pal-input-kbd">esc</kbd>
+    </div>
+
+    <div class="cm-pal-results" role="listbox">
+      @if (filtered().length === 0) {
+        <div class="cm-pal-empty">No commands match.</div>
+      } @else {
+        @for (cmd of filtered(); track cmd.key; let i = $index) {
+          <button
+            type="button"
+            class="cm-pal-row"
+            [class.is-highlighted]="i === highlightedIdx()"
+            [attr.data-category]="cmd.category"
+            role="option"
+            [attr.aria-selected]="i === highlightedIdx()"
+            (mouseenter)="highlightedIdx.set(i)"
+            (click)="select(i)"
+          >
+            <span class="cm-pal-row-icon" aria-hidden="true">{{ categoryIcon(cmd.category) }}</span>
+            <span class="cm-pal-row-label">{{ cmd.label }}</span>
+            <span class="cm-pal-row-hint">{{ cmd.hint }}</span>
+          </button>
+        }
+      }
+    </div>
+
+    <div class="cm-pal-footer">
+      <span class="cm-pal-foot-item"><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+      <span class="cm-pal-foot-item"><kbd>↵</kbd> run</span>
+      <span class="cm-pal-foot-item"><kbd>esc</kbd> close</span>
+      <span class="cm-pal-foot-spacer"></span>
+      <span class="cm-pal-foot-count">{{ filtered().length }} commands</span>
+    </div>
+  </div>
+}

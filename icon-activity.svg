@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+  <!-- Loadout activity bar icon: stacked rectangles representing equipment slots -->
+  <rect x="4" y="4" width="16" height="4" rx="1.5" fill-opacity="0.4"/>
+  <rect x="4" y="10" width="16" height="4" rx="1.5" fill-opacity="0.7"/>
+  <rect x="4" y="16" width="16" height="4" rx="1.5"/>
+  <!-- Active indicator dot -->
+  <circle cx="20" cy="18" r="1.5" fill="currentColor"/>
+</svg>

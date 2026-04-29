@@ -1,0 +1,177 @@
+<div class="cm-set">
+  <!-- ─── Apariencia ───────────────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Appearance</h2>
+      <p class="cm-set-p">How Loadout looks and behaves.</p>
+    </header>
+
+    <div class="cm-set-row">
+      <label class="cm-set-label">Density</label>
+      <div class="cm-set-control">
+        <div class="cm-set-segmented">
+          <button
+            type="button"
+            class="cm-set-seg-btn"
+            [class.is-on]="settings.settings().density === 'compact'"
+            (click)="update('density', 'compact')"
+          >
+            Compact
+          </button>
+          <button
+            type="button"
+            class="cm-set-seg-btn"
+            [class.is-on]="settings.settings().density === 'comfortable'"
+            (click)="update('density', 'comfortable')"
+          >
+            Comfortable
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cm-set-row">
+      <label class="cm-set-label">Theme</label>
+      <div class="cm-set-control">
+        <div class="cm-set-segmented">
+          <button
+            type="button"
+            class="cm-set-seg-btn"
+            [class.is-on]="settings.settings().theme === 'auto'"
+            (click)="update('theme', 'auto')"
+          >
+            Auto
+          </button>
+          <button
+            type="button"
+            class="cm-set-seg-btn"
+            [class.is-on]="settings.settings().theme === 'dark'"
+            (click)="update('theme', 'dark')"
+          >
+            Dark
+          </button>
+          <button
+            type="button"
+            class="cm-set-seg-btn"
+            [class.is-on]="settings.settings().theme === 'light'"
+            (click)="update('theme', 'light')"
+          >
+            Light
+          </button>
+        </div>
+        <p class="cm-set-hint">Auto follows the VSCode color theme.</p>
+      </div>
+    </div>
+
+    <div class="cm-set-row">
+      <label class="cm-set-label">Default tab</label>
+      <div class="cm-set-control">
+        <select
+          class="cm-set-select"
+          [ngModel]="settings.settings().defaultTab"
+          (ngModelChange)="update('defaultTab', $event)"
+          [ngModelOptions]="{ standalone: true }"
+        >
+          <option value="workspace">Workspace</option>
+          <option value="profiles">Profiles</option>
+          <option value="catalog">Catalog</option>
+          <option value="last">Last opened</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Catálogo ────────────────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Global catalog</h2>
+      <p class="cm-set-p">Where your shared agents and skills live across projects.</p>
+    </header>
+
+    <div class="cm-set-row">
+      <label class="cm-set-label">Path</label>
+      <div class="cm-set-control">
+        <code class="cm-set-code">{{ catalog.globalRoot() }}</code>
+        <cm-button variant="secondary" size="sm" (click)="revealCatalog()">Open in Finder</cm-button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Registry ─────────────────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Template registry</h2>
+      <p class="cm-set-p">URL Loadout uses to check for agent and skill updates.</p>
+    </header>
+
+    <div class="cm-set-row">
+      <label class="cm-set-label">URL</label>
+      <div class="cm-set-control cm-set-control--stack">
+        <input
+          type="text"
+          class="cm-set-input"
+          [ngModel]="registryUrlDraft() || registryUrl()"
+          (ngModelChange)="onRegistryUrlInput($event)"
+          (blur)="commitRegistryUrl()"
+          [ngModelOptions]="{ standalone: true }"
+          placeholder="https://www.aitmpl.com/components.json"
+        />
+        <div class="cm-set-row-actions">
+          <cm-button variant="secondary" size="sm" (click)="testRegistry()" [disabled]="registryTestResult() === 'testing'">
+            {{ registryTestResult() === 'testing' ? 'Testing…' : 'Test connection' }}
+          </cm-button>
+          @if (registryTestResult() === 'ok') {
+            <span class="cm-set-test-result is-ok">✓ {{ registryTestMessage() }}</span>
+          } @else if (registryTestResult() === 'fail') {
+            <span class="cm-set-test-result is-fail">✗ {{ registryTestMessage() }}</span>
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Atajos ──────────────────────────────────────────────────── -->
+  <section class="cm-set-section">
+    <header class="cm-set-section-head">
+      <h2 class="cm-set-h2">Keyboard shortcuts</h2>
+      <p class="cm-set-p">Move faster. These work whenever Loadout has focus.</p>
+    </header>
+
+    <ul class="cm-set-shortcuts" role="list">
+      @for (sc of shortcuts; track sc.action) {
+        <li class="cm-set-shortcut">
+          <span class="cm-set-shortcut-keys">
+            @for (k of sc.keys; track k; let last = $last) {
+              <kbd>{{ k }}</kbd>
+              @if (!last && sc.keys.length === 2) { <span class="cm-set-shortcut-plus">+</span> }
+            }
+          </span>
+          <span class="cm-set-shortcut-action">{{ sc.action }}</span>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <!-- ─── About ───────────────────────────────────────────────────── -->
+  <div class="cm-set-divider"></div>
+
+  <section class="cm-set-about">
+    <h1 class="cm-set-about-mark">Loadout</h1>
+    <p class="cm-set-about-sub">Swap your Claude Code setup like equipment.</p>
+    <div class="cm-set-about-version">
+      <span class="cm-set-about-ver-num">v{{ sync.version() || '2.0.0' }}</span>
+      <span class="cm-set-about-ver-badge">latest</span>
+    </div>
+    <p class="cm-set-about-tagline">Agents, skills, profiles — ready in one click.</p>
+
+    <div class="cm-set-about-links">
+      <a href="#" class="cm-set-about-link" (click)="$event.preventDefault(); openLink('https://github.com/JOndarza/loadout#readme')">README</a>
+      <span class="cm-set-about-link-sep">·</span>
+      <a href="#" class="cm-set-about-link" (click)="$event.preventDefault(); openLink('https://github.com/JOndarza/loadout')">GitHub</a>
+      <span class="cm-set-about-link-sep">·</span>
+      <a href="#" class="cm-set-about-link" (click)="$event.preventDefault(); openLink('https://github.com/JOndarza/loadout/issues')">Issues</a>
+    </div>
+
+    <p class="cm-set-about-foot">Made for developers who switch contexts often.</p>
+  </section>
+</div>

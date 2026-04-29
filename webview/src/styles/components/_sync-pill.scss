@@ -1,0 +1,47 @@
+// =============================================================================
+// Components — cm-sync-pill
+// =============================================================================
+
+@use '../abstracts' as *;
+
+cm-sync-pill {
+  display: inline-block;
+}
+
+.cm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-full);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  white-space: nowrap;
+
+  &[data-status='synced'] {
+    color: var(--success);
+    @include ring(rgba(52, 211, 153, 0.4));
+  }
+
+  &[data-status='localModified'] {
+    color: var(--info);
+    @include ring(rgba(59, 130, 246, 0.4));
+  }
+
+  &[data-status='sharedUpdated'] {
+    color: var(--gold);
+    @include ring(rgba(var(--gold-rgb), 0.5));
+  }
+
+  &[data-status='diverged'] {
+    color: var(--error);
+    @include ring(rgba(255, 110, 132, 0.45));
+  }
+}
+
+.cm-pill-icon {
+  font-size: 11px;
+  line-height: 1;
+}

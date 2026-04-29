@@ -1,0 +1,73 @@
+// =============================================================================
+// Components — CopyToClipboard directive (.cm-copy)
+// =============================================================================
+
+.cm-copy {
+  position: relative;
+  cursor: pointer;
+
+  // Dashed underline signals copiability
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: rgba(var(--primary-rgb), 0.3);
+  text-underline-offset: 3px;
+
+  transition:
+    color var(--t-fast),
+    text-decoration-color var(--t-fast);
+
+  // CSS-only tooltip via ::after
+  &::after {
+    content: 'Copy';
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: var(--surface-3);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    letter-spacing: var(--tracking-wide);
+    padding: 2px 8px;
+    border-radius: var(--r-full);
+    box-shadow: var(--ring-soft);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition:
+      opacity var(--t-fast),
+      transform 150ms cubic-bezier(0, 0, 0.2, 1); // ease-out for enter
+  }
+
+  &:hover {
+    color: var(--primary);
+    text-decoration-color: rgba(var(--primary-rgb), 0.6);
+
+    &::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  &.is-copied {
+    color: var(--success);
+    text-decoration-color: rgba(52, 211, 153, 0.4);
+    animation: cm-copy-confirm 300ms var(--ease-spring) both;
+
+    &::after {
+      content: '✓ Copied';
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      color: var(--success);
+      background: rgba(52, 211, 153, 0.08);
+      box-shadow: var(--ring-soft), 0 0 0 1px rgba(52, 211, 153, 0.25);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    animation: none;
+    &::after { transition: none; }
+    &.is-copied { animation: none; }
+  }
+}

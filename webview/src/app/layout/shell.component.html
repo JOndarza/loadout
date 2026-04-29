@@ -1,0 +1,127 @@
+@if (!sync.ready()) {
+  <div class="cm-boot">
+    <div class="cm-boot-mark">Loadout</div>
+    <div class="cm-boot-tag">Swap your Claude Code setup like equipment.</div>
+    <div class="cm-boot-spinner"></div>
+  </div>
+} @else {
+  <header class="cm-header">
+    <div class="cm-header-row">
+      <h1 class="cm-wordmark" title="Loadout v{{ sync.version() }}">Loadout</h1>
+
+      <div class="cm-search-wrap">
+        <span class="cm-search-icon" aria-hidden="true">⌕</span>
+        <input
+          #searchInput
+          type="search"
+          class="cm-search-input"
+          [class.is-focused]="searchFocused()"
+          [value]="searchQuery()"
+          (input)="onSearchInput($any($event.target).value)"
+          (focus)="searchFocused.set(true)"
+          (blur)="searchFocused.set(false)"
+          placeholder="Search…"
+          aria-label="Search agents, skills, and profiles"
+        />
+        <kbd class="cm-search-kbd">/</kbd>
+      </div>
+
+      <button
+        type="button"
+        class="cm-icon-btn cm-palette-btn"
+        [title]="'Command palette (' + shortcuts.modKey + 'K)'"
+        aria-label="Open command palette"
+        (click)="openPalette()"
+      >
+        <span class="cm-kbd-pair"><kbd>{{ shortcuts.modKey }}</kbd><kbd>K</kbd></span>
+      </button>
+
+      <button
+        type="button"
+        class="cm-icon-btn cm-settings-btn"
+        [class.is-active]="activeTab() === 'settings'"
+        (click)="setTab('settings')"
+        aria-label="Settings"
+        title="Settings"
+      >
+        ⚙
+      </button>
+    </div>
+
+    <nav class="cm-tabs" role="tablist" aria-label="Sections">
+      <button
+        type="button"
+        role="tab"
+        class="cm-tab"
+        [class.is-active]="activeTab() === 'workspace'"
+        [attr.aria-selected]="activeTab() === 'workspace'"
+        (click)="setTab('workspace')"
+      >
+        <span class="cm-tab-label">Workspace</span>
+        <span class="cm-tab-badge">{{ workspace.totalCount() }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cm-tab"
+        [class.is-active]="activeTab() === 'profiles'"
+        [attr.aria-selected]="activeTab() === 'profiles'"
+        (click)="setTab('profiles')"
+      >
+        <span class="cm-tab-label">Profiles</span>
+        <span class="cm-tab-badge">{{ profiles.entries().length }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="cm-tab"
+        [class.is-active]="activeTab() === 'catalog'"
+        [attr.aria-selected]="activeTab() === 'catalog'"
+        (click)="setTab('catalog')"
+      >
+        <span class="cm-tab-label">Catalog</span>
+        <span class="cm-tab-badge">{{ catalog.totalCount() }}</span>
+      </button>
+    </nav>
+  </header>
+
+  <div class="cm-status-strip" role="status" aria-live="polite">
+    <span class="cm-stat">
+      <span class="cm-stat-dot cm-stat-dot--agents"></span>
+      <strong>{{ workspace.activeAgents().length }}</strong>
+      <span class="cm-stat-of">/{{ workspace.agents().length }}</span>
+      <span class="cm-stat-label">agents</span>
+    </span>
+    <span class="cm-stat">
+      <span class="cm-stat-dot cm-stat-dot--skills"></span>
+      <strong>{{ workspace.activeSkills().length }}</strong>
+      <span class="cm-stat-of">/{{ workspace.skills().length }}</span>
+      <span class="cm-stat-label">skills</span>
+    </span>
+    <span class="cm-stat-spacer"></span>
+    <span class="cm-stat-tokens">
+      <span class="cm-stat-tokens-num">~{{ formatTokens(workspace.totalActiveTokens()) }}</span>
+      <span class="cm-stat-tokens-unit">tok</span>
+      <span class="cm-stat-tokens-cost">~\${{ costEstimate() }}/req</span>
+    </span>
+  </div>
+
+  <main class="cm-content" [attr.data-density]="density()">
+    @switch (activeTab()) {
+      @case ('workspace') {
+        <cm-workspace [searchQuery]="searchQuery()" />
+      }
+      @case ('profiles') {
+        <cm-profiles />
+      }
+      @case ('catalog') {
+        <cm-catalog [searchQuery]="searchQuery()" />
+      }
+      @case ('settings') {
+        <cm-settings />
+      }
+    }
+  </main>
+
+  <cm-command-palette />
+}

@@ -1,0 +1,117 @@
+// =============================================================================
+// Loadout — mixins
+// NO-LINE rule: never use `border:`. Use ring() and outline only.
+// =============================================================================
+
+@use './variables' as *;
+
+// ─── Ring (replacement for border) ───────────────────────────────────────────
+@mixin ring($color, $width: 1px) {
+  box-shadow: 0 0 0 $width $color;
+}
+
+@mixin ring-with-shadow($ring-color, $shadow) {
+  box-shadow: 0 0 0 1px $ring-color, $shadow;
+}
+
+// ─── Glass surface ───────────────────────────────────────────────────────────
+@mixin glass-surface($alpha: 0.06) {
+  background: rgba(var(--primary-rgb), $alpha);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+}
+
+@mixin glass-premium {
+  background: var(--surface-glass);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+}
+
+// ─── Gradient text (wordmark) ────────────────────────────────────────────────
+@mixin wordmark-gradient {
+  background: linear-gradient(135deg, var(--wordmark-from), var(--wordmark-to));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+// ─── Focus visible ring ──────────────────────────────────────────────────────
+@mixin focus-ring($color: var(--gold)) {
+  &:focus-visible {
+    outline: 2px solid $color;
+    outline-offset: 2px;
+  }
+}
+
+// ─── Container queries (sidebar-first responsive) ────────────────────────────
+@mixin at-xs { @container cm-root (max-width: 320px) { @content; } }
+@mixin at-sm { @container cm-root (max-width: 479px) { @content; } }
+@mixin at-md-up { @container cm-root (min-width: 480px) { @content; } }
+@mixin at-lg-up { @container cm-root (min-width: 720px) { @content; } }
+@mixin at-xl-up { @container cm-root (min-width: 960px) { @content; } }
+
+// ─── Truncation ──────────────────────────────────────────────────────────────
+@mixin truncate-1 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin truncate-n($lines) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// ─── Reset button ────────────────────────────────────────────────────────────
+@mixin button-reset {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+// ─── Animated wordmark gradient ──────────────────────────────────────────────
+// Replaces the static wordmark-gradient when animation is desired.
+// Requires cm-wordmark-flow keyframe (base/_animations.scss).
+@mixin animated-wordmark {
+  background: linear-gradient(
+    90deg,
+    var(--wordmark-from)  0%,
+    var(--wordmark-to)   30%,
+    var(--wordmark-from) 50%,
+    var(--wordmark-to)   70%,
+    var(--wordmark-from) 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: cm-wordmark-flow 32s ease-in-out infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background-size: 100% 100%;
+  }
+}
+
+// ─── Staggered list enter ─────────────────────────────────────────────────────
+// Apply inside a list container selector. Each direct >li delays cm-card-in.
+// Requires cm-card-in keyframe (base/_animations.scss).
+@mixin stagger-list($count: 20, $delay: 28ms) {
+  @for $i from 1 through $count {
+    &:nth-child(#{$i}) cm-card {
+      animation: cm-card-in 220ms $ease-standard #{($i - 1) * $delay} both;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    cm-card { animation: none; }
+  }
+}

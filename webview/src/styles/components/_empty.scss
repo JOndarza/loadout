@@ -1,0 +1,49 @@
+// =============================================================================
+// Components — cm-empty
+// =============================================================================
+
+@use '../abstracts' as *;
+
+cm-empty {
+  display: block;
+}
+
+.cm-empty {
+  padding: var(--sp-12) var(--sp-6);
+  text-align: center;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  outline: 1px dashed rgba(255, 255, 255, 0.08);
+  outline-offset: -1px;
+  animation: cm-empty-in 250ms cubic-bezier(0.4, 0, 0.2, 1) both;
+
+  @media (prefers-reduced-motion: reduce) { animation: none; }
+}
+
+[data-theme='light'] .cm-empty {
+  outline-color: rgba(0, 0, 0, 0.1);
+}
+
+.cm-empty-icon {
+  font-size: 32px;
+  margin-bottom: var(--sp-3);
+  opacity: 0.5;
+}
+
+.cm-empty-title {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: var(--tracking-tight);
+  margin-bottom: var(--sp-2);
+  color: var(--text);
+}
+
+.cm-empty-desc {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0 0 var(--sp-4);
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}

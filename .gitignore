@@ -1,0 +1,23 @@
+# Loadout extension — ignored paths
+
+# Webview Angular project
+webview/node_modules/
+webview/.angular/
+webview/dist/
+webview/coverage/
+webview/storybook-static/
+
+.claude/
+webview-dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*

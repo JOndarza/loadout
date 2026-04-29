@@ -1,0 +1,9 @@
+// Theme-switch smoothing — applied transiently by ThemeService.
+.cm-theme-transitioning,
+.cm-theme-transitioning * {
+  transition:
+    background-color var(--t-normal),
+    color            var(--t-normal),
+    box-shadow       var(--t-normal),
+    border-color     var(--t-normal) !important;
+}

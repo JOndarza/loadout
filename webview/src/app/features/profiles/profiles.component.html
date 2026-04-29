@@ -1,0 +1,127 @@
+<div class="cm-profiles">
+  <div class="cm-profiles-create">
+    <input
+      type="text"
+      class="cm-profiles-input"
+      [ngModel]="newName()"
+      (ngModelChange)="newName.set($event)"
+      [ngModelOptions]="{ standalone: true }"
+      placeholder="Save current state as a new loadout…"
+      (keydown.enter)="save()"
+      aria-label="New loadout name"
+    />
+    <cm-button variant="primary" size="md" (click)="save()">
+      Save loadout
+    </cm-button>
+  </div>
+
+  @if (entries().length === 0) {
+    <cm-empty
+      icon="◇"
+      title="No loadouts yet"
+      description="A loadout is a saved snapshot of which agents and skills are active. Save your current setup above to switch to it later with one click."
+    />
+  } @else {
+    <ul class="cm-profiles-list" role="list">
+      @for (p of entries(); track p.name; let i = $index) {
+        <li
+          [draggable]="renamingFrom() !== p.name && editingName() !== p.name"
+          (dragstart)="onDragStart(i)"
+          (dragover)="onDragOver($any($event))"
+          (drop)="onDrop(i)"
+        >
+          <cm-card [active]="isActive(p.name)" variant="profile">
+            <span class="cm-profiles-drag" aria-hidden="true">⋮⋮</span>
+
+            <div class="cm-profiles-info">
+              @if (renamingFrom() === p.name) {
+                <input
+                  type="text"
+                  class="cm-profiles-rename-input"
+                  [ngModel]="renameTo()"
+                  (ngModelChange)="renameTo.set($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  (keydown.enter)="commitRename()"
+                  (keydown.escape)="cancelRename()"
+                  (blur)="commitRename()"
+                  aria-label="Rename loadout"
+                  autofocus
+                />
+              } @else {
+                <div
+                  class="cm-profiles-name"
+                  (dblclick)="startRename(p.name)"
+                  title="Double-click to rename"
+                >
+                  {{ p.name }}
+                  @if (isActive(p.name)) {
+                    <span class="cm-profiles-active-badge">● Active</span>
+                  }
+                </div>
+              }
+              <div class="cm-profiles-meta">
+                <strong>{{ p.agents.length }}</strong> agents ·
+                <strong>{{ p.skills.length }}</strong> skills ·
+                {{ formatDate(p.createdAt) }}
+              </div>
+            </div>
+
+            <div class="cm-profiles-actions">
+              <cm-button variant="ghost" size="sm" (click)="startEdit(p)" title="Edit items">✎</cm-button>
+              <cm-button variant="ghost" size="sm" (click)="duplicate(p.name)" title="Duplicate">⎘</cm-button>
+              <cm-button
+                variant="gold"
+                size="sm"
+                (click)="apply(p.name)"
+                [disabled]="isActive(p.name)"
+                title="Apply"
+              >
+                {{ isActive(p.name) ? 'Active' : 'Apply' }}
+              </cm-button>
+              <cm-button variant="danger" size="sm" (click)="remove(p.name)" title="Delete">✕</cm-button>
+            </div>
+          </cm-card>
+
+          @if (editingName() === p.name) {
+            <div class="cm-profiles-edit">
+              <div class="cm-profiles-edit-section">
+                <div class="cm-profiles-edit-label">Agents</div>
+                <div class="cm-profiles-chips">
+                  @for (a of workspace.agents(); track a.file) {
+                    <button
+                      type="button"
+                      class="cm-profiles-chip cm-profiles-chip--agent"
+                      [class.is-on]="isEditAgentOn(a.file)"
+                      (click)="toggleEditAgent(a.file)"
+                    >
+                      {{ a.name }}
+                    </button>
+                  }
+                </div>
+              </div>
+              <div class="cm-profiles-edit-section">
+                <div class="cm-profiles-edit-label">Skills</div>
+                <div class="cm-profiles-chips">
+                  @for (s of workspace.skills(); track s.file) {
+                    <button
+                      type="button"
+                      class="cm-profiles-chip cm-profiles-chip--skill"
+                      [class.is-on]="isEditSkillOn(s.file)"
+                      (click)="toggleEditSkill(s.file)"
+                    >
+                      {{ s.name }}
+                    </button>
+                  }
+                </div>
+              </div>
+              <div class="cm-profiles-edit-actions">
+                <cm-button variant="ghost" size="sm" (click)="cancelEdit()">Cancel</cm-button>
+                <cm-button variant="primary" size="sm" (click)="commitEdit()">Save changes</cm-button>
+              </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  }
+</div>

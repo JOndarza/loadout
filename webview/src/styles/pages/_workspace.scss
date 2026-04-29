@@ -1,0 +1,200 @@
+// =============================================================================
+// Pages — workspace
+// =============================================================================
+
+@use '../abstracts' as *;
+
+cm-workspace {
+  display: block;
+}
+
+.cm-ws {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+// ─── Toolbar ─────────────────────────────────────────────────────────────────
+.cm-ws-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-2);
+}
+
+.cm-ws-toolbar-spacer {
+  flex: 1;
+
+  @include at-xs { display: none; }
+}
+
+.cm-ws-chip {
+  @include button-reset;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 26px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color var(--t-fast), box-shadow var(--t-fast);
+  @include ring(rgba(255, 255, 255, 0.1));
+  @include focus-ring;
+
+  &:hover {
+    color: var(--text-muted);
+    @include ring(rgba(var(--gold-rgb), 0.4));
+  }
+
+  &.is-on {
+    color: var(--gold);
+    background: var(--gold-subtle);
+    @include ring(rgba(var(--gold-rgb), 0.5));
+  }
+}
+
+[data-theme='light'] .cm-ws-chip {
+  @include ring(rgba(0, 0, 0, 0.1));
+}
+
+.cm-ws-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  transition: background var(--t-fast);
+
+  .cm-ws-chip.is-on & {
+    background: currentColor;
+  }
+}
+
+// ─── List ────────────────────────────────────────────────────────────────────
+.cm-ws-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cm-ws-type {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: var(--tracking-wide);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  background: rgba(var(--primary-rgb), 0.08);
+  color: var(--primary);
+  @include ring(rgba(var(--primary-rgb), 0.18));
+
+  &[data-type='skills'] {
+    background: rgba(0, 227, 253, 0.08);
+    color: var(--secondary);
+    @include ring(rgba(0, 227, 253, 0.18));
+  }
+
+  @include at-xs { display: none; }
+}
+
+.cm-ws-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cm-ws-name {
+  font-family: var(--font-headline);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text);
+  @include truncate-1;
+}
+
+.cm-ws-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  @include truncate-1;
+
+  @include at-md-up {
+    @include truncate-n(2);
+  }
+}
+
+.cm-ws-file {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.8;
+}
+
+// ─── Quick actions / hint ────────────────────────────────────────────────────
+.cm-ws-quick-actions {
+  display: flex;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+  padding: var(--sp-2) 0;
+}
+
+.cm-ws-bulk-hint {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  padding: var(--sp-2) 0 var(--sp-4);
+
+  kbd {
+    font-family: var(--font-mono);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1px 5px;
+    border-radius: var(--r-sm);
+    font-size: 10px;
+  }
+}
+
+[data-theme='light'] .cm-ws-bulk-hint kbd {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+// ─── Bulk bar ────────────────────────────────────────────────────────────────
+.cm-ws-bulk-bar {
+  position: sticky;
+  bottom: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-lg);
+  margin-top: var(--sp-3);
+  @include glass-premium;
+  box-shadow:
+    0 0 0 1px rgba(var(--gold-rgb), 0.4),
+    var(--shadow-ambient);
+  z-index: var(--z-overlay);
+}
+
+.cm-ws-bulk-count {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--gold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.cm-ws-bulk-spacer {
+  flex: 1;
+}

@@ -1,0 +1,53 @@
+// =============================================================================
+// Themes — dark (default)
+// =============================================================================
+
+:root[data-theme='dark'] {
+  --bg:            #06060a;
+  --surface:       #0e0e18;
+  --surface-2:     #141420;
+  --surface-3:     #1c1c2a;
+  --surface-glass: rgba(8, 8, 16, 0.85);
+
+  --text:       #ffffff;
+  --text-muted: #b0acac;
+  --text-dim:   #767575;
+
+  --primary:     #c4adff;
+  --primary-dim: #9070ff;
+  --primary-rgb: 196, 173, 255;
+
+  --secondary: #00e3fd;
+  --tertiary:  #ff96bb;
+
+  --gold:       #d4af37;
+  --gold-bright: #e8c246;
+  --gold-on:    #1a1000;
+  --gold-glow:  rgba(212, 175, 55, 0.3);
+  --gold-subtle: rgba(212, 175, 55, 0.08);
+  --gold-rgb:   212, 175, 55;
+
+  --success: #34d399;
+  --warning: #fbbf24;
+  --error:   #ff6e84;
+  --info:    #3b82f6;
+
+  --ring-soft:    0 0 0 1px rgba(255, 255, 255, 0.08);
+  --ring-medium:  0 0 0 1px rgba(255, 255, 255, 0.14);
+  --ring-strong:  0 0 0 1px rgba(255, 255, 255, 0.22);
+  --ring-primary: 0 0 0 1px rgba(196, 173, 255, 0.4);
+  --ring-gold:    0 0 0 1px rgba(212, 175, 55, 0.4);
+  --ring-error:   0 0 0 1px rgba(255, 110, 132, 0.35);
+
+  --shadow-soft:         0 4px 20px rgba(0, 0, 0, 0.4);
+  --shadow-ambient:      0 24px 48px rgba(0, 0, 0, 0.6);
+  --shadow-glow-primary: 0 0 32px rgba(196, 173, 255, 0.18);
+  --shadow-glow-gold:    0 0 32px rgba(212, 175, 55, 0.22);
+
+  --wordmark-from: #ffffff;
+  --wordmark-to:   var(--gold);
+
+  --token-low:  var(--primary-dim);
+  --token-mid:  var(--primary);
+  --token-high: var(--error);
+}

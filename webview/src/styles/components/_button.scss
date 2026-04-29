@@ -1,0 +1,116 @@
+// =============================================================================
+// Components — cm-button
+// =============================================================================
+
+@use '../abstracts' as *;
+
+cm-button.cm-btn,
+button[cm-button].cm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--r-md);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  transition: background var(--t-fast), color var(--t-fast), box-shadow var(--t-fast), transform var(--t-fast);
+  @include focus-ring;
+
+  &:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+// ─── Sizes ───────────────────────────────────────────────────────────────────
+cm-button[data-size='sm'],
+button[cm-button][data-size='sm'] {
+  height: 26px;
+  padding: 0 var(--sp-3);
+  font-size: 10px;
+}
+
+cm-button[data-size='md'],
+button[cm-button][data-size='md'] {
+  height: 32px;
+}
+
+cm-button[data-block],
+button[cm-button][data-block] {
+  width: 100%;
+}
+
+// ─── Variants ────────────────────────────────────────────────────────────────
+cm-button[data-variant='primary'],
+button[cm-button][data-variant='primary'] {
+  background: var(--gold);
+  color: var(--gold-on);
+
+  &:hover { background: var(--gold-bright); }
+}
+
+cm-button[data-variant='gold'],
+button[cm-button][data-variant='gold'] {
+  background: var(--gold-subtle);
+  color: var(--gold);
+  @include ring(rgba(var(--gold-rgb), 0.4));
+
+  &:hover {
+    background: var(--gold);
+    color: var(--gold-on);
+  }
+}
+
+cm-button[data-variant='secondary'],
+button[cm-button][data-variant='secondary'] {
+  background: transparent;
+  color: var(--text-muted);
+  @include ring(rgba(255, 255, 255, 0.14));
+
+  &:hover {
+    color: var(--text);
+    @include ring(rgba(var(--gold-rgb), 0.4));
+  }
+}
+
+[data-theme='light'] cm-button[data-variant='secondary'],
+[data-theme='light'] button[cm-button][data-variant='secondary'] {
+  @include ring(rgba(0, 0, 0, 0.14));
+}
+
+cm-button[data-variant='ghost'],
+button[cm-button][data-variant='ghost'] {
+  background: transparent;
+  color: var(--text-muted);
+
+  &:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+[data-theme='light'] cm-button[data-variant='ghost']:hover,
+[data-theme='light'] button[cm-button][data-variant='ghost']:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+cm-button[data-variant='danger'],
+button[cm-button][data-variant='danger'] {
+  background: transparent;
+  color: var(--error);
+  @include ring(rgba(255, 110, 132, 0.3));
+
+  &:hover {
+    background: rgba(255, 110, 132, 0.1);
+    @include ring(rgba(255, 110, 132, 0.5));
+  }
+}

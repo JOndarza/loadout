@@ -1,0 +1,40 @@
+// =============================================================================
+// Themes — design tokens (theme-agnostic CSS custom properties)
+// =============================================================================
+
+:root {
+  --font-headline: 'Roboto', system-ui, -apple-system, sans-serif;
+  --font-display:  'Roboto', system-ui, -apple-system, sans-serif;
+  --font-body:     'Roboto', system-ui, -apple-system, sans-serif;
+  --font-mono:     ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --tracking-tight:     -0.02em;
+  --tracking-display:   -0.03em;
+  --tracking-wide:       0.06em;
+  --tracking-uppercase:  0.1em;
+
+  // Spacing
+  --sp-1: 0.25rem;  --sp-2: 0.5rem;   --sp-3: 0.75rem;  --sp-4: 1rem;
+  --sp-5: 1.25rem;  --sp-6: 1.5rem;   --sp-7: 1.75rem;  --sp-8: 2rem;
+  --sp-10: 2.5rem;  --sp-12: 3rem;    --sp-16: 4rem;
+
+  // Radii
+  --r-sm: 0.5rem;  --r-md: 0.75rem;  --r-lg: 1rem;  --r-xl: 1.5rem;  --r-full: 9999px;
+
+  // Motion
+  --t-fast:   150ms ease;
+  --t-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --t-slow:   500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  // Z-index
+  --z-base: 1;  --z-overlay: 100;  --z-modal: 200;  --z-toast: 300;
+
+  // Component dimensions
+  --header-pad-x:  var(--sp-5);
+  --content-pad-x: var(--sp-5);
+  --touch-min:     36px;
+
+  // Glass
+  --glass-blur: 28px;
+}

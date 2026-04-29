@@ -1,0 +1,67 @@
+// =============================================================================
+// Base — keyframes (single source of truth for all animations)
+// =============================================================================
+
+// ─── Cards ───────────────────────────────────────────────────────────────────
+@keyframes cm-card-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cm-card-activate {
+  0%   { background: rgba(var(--primary-rgb), 0.22); }
+  100% { background: rgba(var(--primary-rgb), 0.06); }
+}
+
+// ─── Toast ───────────────────────────────────────────────────────────────────
+@keyframes cm-toast-in {
+  from { transform: translateX(110%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes cm-toast-out {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(110%); opacity: 0; }
+}
+
+// ─── Shell ───────────────────────────────────────────────────────────────────
+@keyframes cm-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes cm-page-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cm-wordmark-flow {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+// ─── Skeleton shimmer ────────────────────────────────────────────────────────
+@keyframes cm-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+// ─── Copy feedback ───────────────────────────────────────────────────────────
+@keyframes cm-copy-confirm {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(0.88); }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+// ─── Empty state ─────────────────────────────────────────────────────────────
+@keyframes cm-empty-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ─── Token bar ───────────────────────────────────────────────────────────────
+@keyframes cm-tb-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 110, 132, 0.3); }
+  50%       { box-shadow: 0 0 12px rgba(255, 110, 132, 0.6); }
+}

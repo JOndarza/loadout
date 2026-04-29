@@ -1,0 +1,21 @@
+// =============================================================================
+// Loadout — 7-1 main entry point
+//
+// Load order:
+//   1. vendors     — third-party fonts & CSS
+//   2. themes      — CSS custom properties (design tokens, dark/light)
+//   3. base        — reset, typography, accessibility
+//   4. layout      — shell frame, header, tabs, status strip
+//   5. components  — reusable UI primitives and overlays
+//   6. pages       — feature-page styles
+//
+// abstracts/ (variables, mixins, functions) produce no CSS output.
+// Each partial that needs them imports abstracts directly.
+// =============================================================================
+
+@use 'vendors';
+@use 'themes';
+@use 'base';
+@use 'layout';
+@use 'components';
+@use 'pages';

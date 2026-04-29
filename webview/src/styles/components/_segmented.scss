@@ -1,0 +1,75 @@
+// =============================================================================
+// Components — cm-segmented
+// =============================================================================
+
+@use '../abstracts' as *;
+
+.cm-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--r-md);
+  background: rgba(0, 0, 0, 0.25);
+  @include ring(rgba(255, 255, 255, 0.04));
+}
+
+[data-theme='light'] .cm-seg {
+  background: rgba(0, 0, 0, 0.04);
+  @include ring(rgba(0, 0, 0, 0.06));
+}
+
+.cm-seg-btn {
+  @include button-reset;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 26px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color var(--t-fast), background var(--t-fast), box-shadow var(--t-fast);
+  @include focus-ring;
+
+  &:hover:not(.is-active) {
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  &.is-active {
+    color: var(--gold);
+    background: var(--gold-subtle);
+    @include ring(rgba(var(--gold-rgb), 0.3));
+  }
+
+  @include at-xs {
+    padding: 0 var(--sp-2);
+    height: 24px;
+    font-size: 10px;
+  }
+}
+
+[data-theme='light'] .cm-seg-btn:hover:not(.is-active) {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.cm-seg-count {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  letter-spacing: 0;
+
+  .cm-seg-btn.is-active & {
+    background: rgba(var(--gold-rgb), 0.18);
+  }
+}
+
+[data-theme='light'] .cm-seg-count {
+  background: rgba(0, 0, 0, 0.06);
+}

@@ -1,0 +1,95 @@
+<div class="cm-ws">
+  <div class="cm-ws-toolbar">
+    <cm-segmented
+      [options]="kindOptions()"
+      [value]="kind()"
+      (valueChange)="kind.set($any($event))"
+      ariaLabel="Filter by kind"
+    />
+
+    <div class="cm-ws-toolbar-spacer"></div>
+
+    <button
+      type="button"
+      class="cm-ws-chip"
+      [class.is-on]="activeOnly()"
+      (click)="activeOnly.set(!activeOnly())"
+      title="Show only active items"
+    >
+      <span class="cm-ws-chip-dot"></span>
+      Active
+    </button>
+
+    <button
+      type="button"
+      class="cm-ws-chip"
+      [class.is-on]="heavyOnly()"
+      (click)="heavyOnly.set(!heavyOnly())"
+      title="Show items over 1k tokens"
+    >
+      <span class="cm-ws-chip-dot"></span>
+      Heavy
+    </button>
+  </div>
+
+  @if (visibleItems().length === 0) {
+    <cm-empty
+      title="Nothing to show"
+      [description]="
+        searchQuery() || activeOnly() || heavyOnly()
+          ? 'No items match the current filters.'
+          : 'Add files to .claude/agents/ or .claude/skills/ to start using Loadout.'
+      "
+      icon="∅"
+    />
+  } @else {
+    <ul class="cm-ws-list" role="list">
+      @for (item of visibleItems(); track key(item)) {
+        <li>
+          <cm-card
+            [active]="item.active"
+            [selected]="isSelected(item)"
+            (click)="onCardClick(item, $any($event))"
+          >
+            <span class="cm-ws-type" [attr.data-type]="item.type">
+              {{ item.type === 'agents' ? 'AGT' : 'SKL' }}
+            </span>
+            <div class="cm-ws-info">
+              <div class="cm-ws-name" [cmCopy]="item.name" title="Click to copy">{{ item.name }}</div>
+              @if (item.description) {
+                <div class="cm-ws-desc">{{ item.description }}</div>
+              } @else {
+                <div class="cm-ws-file">{{ item.file }}</div>
+              }
+            </div>
+            <cm-token-bar [tokens]="item.tokens" />
+            <cm-toggle
+              [checked]="item.active"
+              [ariaLabel]="(item.active ? 'Disable ' : 'Enable ') + item.name"
+              (toggled)="toggle(item)"
+            />
+          </cm-card>
+        </li>
+      }
+    </ul>
+
+    <div class="cm-ws-bulk-hint">
+      Tip: <kbd>Shift</kbd>+click to multi-select. Bulk actions appear above.
+    </div>
+  }
+
+  @if (selected().size > 0) {
+    <div class="cm-ws-bulk-bar" role="region" aria-label="Bulk actions">
+      <span class="cm-ws-bulk-count">{{ selected().size }} selected</span>
+      <span class="cm-ws-bulk-spacer"></span>
+      <cm-button variant="ghost" size="sm" (click)="bulkDisable()">Disable</cm-button>
+      <cm-button variant="gold" size="sm" (click)="bulkEnable()">Enable</cm-button>
+      <cm-button variant="ghost" size="sm" (click)="clearSelection()">✕</cm-button>
+    </div>
+  } @else {
+    <div class="cm-ws-quick-actions">
+      <cm-button variant="ghost" size="sm" (click)="enableAllVisible()">✓ All visible</cm-button>
+      <cm-button variant="ghost" size="sm" (click)="disableAllVisible()">✗ None visible</cm-button>
+    </div>
+  }
+</div>
