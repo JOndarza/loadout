@@ -64,6 +64,18 @@ Commit the updated `webview-dist/` alongside your changes.
 | `contributes.views` | `loadout.sidebarView` (webview) |
 | `configuration` | `claudeManager.globalCatalogPath` — custom catalog path |
 
+## Configuration
+
+**`claudeManager.globalCatalogPath`** — string, default `~/.claude/`
+
+Overrides the global catalog location. Useful for teams sharing a catalog stored at a non-default path (e.g. a mounted network drive or a company-wide dotfiles directory). Set it via **VSCode Settings UI** (`Preferences: Open Settings (UI)` → search `globalCatalogPath`) or directly in `settings.json`:
+
+```json
+"claudeManager.globalCatalogPath": "/shared/team/.claude"
+```
+
+If the value is blank or missing, Loadout falls back to `~/.claude/`.
+
 ## Registry sync
 
 The default registry URL is `https://www.aitmpl.com/components.json`. Users can override it in Settings → Registry URL.

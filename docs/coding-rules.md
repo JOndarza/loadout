@@ -39,6 +39,10 @@
 - Components receive data via injected signals and send actions via `VsCodeBridgeService.send()`.
 - Never call `VsCodeBridgeService.send()` from inside a template event binding; keep it in the component method.
 
+### Accessibility
+
+- Every interactive element (buttons, toggles, inputs) in `webview/src/app/` must have an `aria-label` or visible label text.
+
 ### No-VSCode-in-webview rule
 
 - Never `import vscode` or reference `vscode.*` in any `webview/` file.
