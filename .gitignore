@@ -7,7 +7,8 @@ webview/dist/
 webview/coverage/
 webview/storybook-static/
 
-.claude/
+.claude/*
+!.claude/skills
 .claire/
 webview-dist/
 
