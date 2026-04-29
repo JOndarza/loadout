@@ -1,0 +1,36 @@
+# [Project Name] — Project Rules
+
+## Context
+[1-2 sentences. No business details — those live in .claude/rules/business-context.md]
+
+## Hard NOs
+- NEVER [the single most destructive pattern for this project — e.g. "use MediatR, use martinothamar/Mediator instead"]
+- NEVER [second critical NO]
+- NEVER [third critical NO — keep this list to 5 items max]
+
+## Conventions
+- **Documentation language**: [english|spanish]
+- **Code language**: [english|spanish]
+- [1-2 universal rules only]
+
+## Process
+- **Branches**: [e.g. main = prod, dev = integration, feature/<slug>]
+- **Commits**: [e.g. conventional, imperative, no AI attribution]
+- **CI**: [e.g. all checks must pass before merge]
+
+## Where context comes from
+- **Always-loaded rules**: `.claude/rules/*.md` without `paths:` frontmatter — load every session
+- **Auto-loaded rules**: `.claude/rules/*.md` with `paths:` frontmatter — load only when Claude reads matching files
+- **Full docs**: `docs/*.md` — read on-demand when detail is needed beyond what the rules carry
+- **Governance**: `docs/README.md` — doc-folder rules, story/bug workflows
+
+## What does NOT belong here
+Move to `.claude/rules/`:
+- Business context, user flows, ecosystem descriptions → `business-context.md`
+- Coding conventions, naming rules → `coding-rules.md`
+- Package / version tables → `tech-stack.md`
+- Architecture patterns, layer dependencies → `architecture.md`
+- Backend-specific rules → `backend.md` (path-scoped)
+- Frontend-specific rules → `frontend.md` (path-scoped)
+- API / endpoint rules → `api.md` (path-scoped)
+- Database / migration rules → `database.md` (path-scoped)

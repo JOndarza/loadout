@@ -1,0 +1,27 @@
+{
+  "_comment": "docs-architect v2 hook recipe. Copy the 'hooks' key contents into your .claude/settings.json, merging with any existing hooks. This file is NOT auto-merged by the skill.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "awk 'END { if (NR > 100) print \"[docs-architect] CLAUDE.md is \" NR \" lines (v2 target: under 100). Run /docs-audit for guidance.\" }' CLAUDE.md 2>/dev/null"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "test -d docs/_lite && find docs/_lite -name '*.summary.md' -not -name '*.deprecated' | head -1 | xargs -I{} echo '[docs-architect] legacy _lite/ files still present. Run /docs-migrate to convert to .claude/rules/.'"
+          }
+        ]
+      }
+    ]
+  }
+}

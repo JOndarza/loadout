@@ -1,0 +1,112 @@
+# Project Documentation
+
+## Structure
+
+```
+docs/
+├── README.md                 # this file — governance + index
+├── architecture.md           # full architecture reference
+├── coding-rules.md           # full coding conventions
+├── tech-stack.md             # full package/version catalog
+├── api-contracts.md          # full endpoint catalog
+├── database-schema.md        # full table catalog
+├── deployment.md             # full dev/prod environment reference
+├── roadmap.md                # product phases, KPIs, decisions log
+├── backlog.md                # user story registry
+├── bugs.md                   # bug registry
+├── ideas.md                  # raw ideas inbox
+├── stories/                  # individual story files
+├── bugs/                     # individual bug files
+├── plans/                    # individual plan files
+└── research/                 # deep reference docs, on-demand
+
+.claude/
+├── rules/                    # AI-facing distillations — v2 replacement for _lite/
+│   ├── business-context.md   # always-loaded
+│   ├── coding-rules.md       # always-loaded
+│   ├── tech-stack.md         # always-loaded
+│   ├── architecture.md       # always-loaded
+│   ├── backend.md            # path-scoped: backend/**
+│   ├── frontend.md           # path-scoped: frontend/**
+│   ├── api.md                # path-scoped: **/Controllers/**, **/routes/**
+│   ├── database.md           # path-scoped: **/Entities/**, **/migrations/**
+│   └── testing.md            # path-scoped: **/*.test.*, **/tests/**
+├── agents/doc-explorer.md    # subagent for doc research
+└── commands/                 # /docs-audit, /docs-sync, /docs-migrate
+```
+
+## How to use this documentation
+
+### For humans
+Read files in `docs/` directly. `docs/README.md` is the index. Full docs are the source of truth.
+
+### For AI assistants (Claude Code)
+Documentation is organized in **two layers**:
+
+1. **`.claude/rules/*.md`** — lean AI-facing distillations. Load automatically per Claude Code's native mechanism: frontmatter-less files load at session start, files with `paths:` frontmatter load only when Claude reads matching files. This is the AI's primary orientation layer.
+2. **`docs/*.md`** — full human-readable references. Read on-demand only when the rules don't carry enough detail.
+
+**Rule for the AI**: never load multiple full docs at once. Use `.claude/rules/` to orient, then read one specific `docs/*.md` file when detail is needed.
+
+## Rules for AI assistants
+
+### Documentation management
+- If the docs structure doesn't exist, create it.
+- Documentation language: [declared in CLAUDE.md]. Do not mix languages within a single file.
+- No `.md` files outside `docs/`. Only exceptions: `CLAUDE.md` at repo root, `.claude/rules/*.md`, `.claude/agents/*.md`, `.claude/commands/*.md`, and `docs/README.md`.
+
+### Dual update rule
+When you update a `.claude/rules/*.md` file that mirrors a `docs/*.md` file, update the full doc in the same commit. And vice versa. Never drift.
+
+### Stories and bugs
+- Each story in `docs/stories/`, each bug in `docs/bugs/`.
+- **Priority/Severity is mandatory** — specify when creating. If not provided, ask before proceeding.
+- When changing status of a story or bug, update **both**: the individual file AND the registry (`backlog.md` / `bugs.md`). Never one without the other.
+- Individual story file: create only when work starts (`In progress`). While `Pending`, the registry entry is sufficient.
+- At the end of a session, review `backlog.md` and `bugs.md` and mark affected items accordingly.
+- See `references/governance.md` in the `docs-architect` skill for priority/severity/status definitions.
+
+### Frontend workflow
+[If project has a frontend — include the 3-step pipeline: product definition → design exploration → UX validation. Remove if no frontend.]
+
+### Git and code safety
+- Do NOT create database migrations autonomously — they require manual review.
+- Do NOT modify docker-compose files unless the user explicitly requests it.
+- Do NOT use `git add -A` or `git add .` — always stage specific files by name.
+- Do NOT `git push --force` to main/master under any circumstance.
+- Do NOT skip pre-commit hooks (`--no-verify`).
+- Do NOT use `--amend` without explicit user request.
+- When in doubt about domain or architecture decisions, ask before implementing.
+
+## When to update each document
+
+| Change | Update |
+|---|---|
+| New or modified endpoint | `.claude/rules/api.md` + `docs/api-contracts.md` |
+| New package or version bump | `.claude/rules/tech-stack.md` + `docs/tech-stack.md` |
+| New table, column, or migration | `.claude/rules/database.md` + `docs/database-schema.md` |
+| New pattern or architecture change | `.claude/rules/architecture.md` + `docs/architecture.md` |
+| New Docker service or env var | `docs/deployment.md` (no rule mirror — full doc only) |
+| New story or status change | `docs/backlog.md` + `docs/stories/{NNNNN}-{slug}.story.md` |
+| New bug or status change | `docs/bugs.md` + `docs/bugs/{NNNNN}-{slug}.bug.md` |
+| Product goal or KPI change | `docs/roadmap.md` (no rule mirror) |
+| New convention or naming rule | `.claude/rules/coding-rules.md` + `docs/coding-rules.md` |
+
+## Index
+
+| File | Content |
+|---|---|
+| [architecture.md](architecture.md) | Layers, patterns, flows, error handling |
+| [api-contracts.md](api-contracts.md) | Endpoints, request/response contracts, auth |
+| [database-schema.md](database-schema.md) | Tables, columns, relationships, migrations |
+| [coding-rules.md](coding-rules.md) | Naming, validation, error handling conventions |
+| [tech-stack.md](tech-stack.md) | Backend/frontend/infra package catalog |
+| [deployment.md](deployment.md) | Dev + prod environments, commands, troubleshooting |
+| [roadmap.md](roadmap.md) | Phases, KPIs, decisions log |
+| [backlog.md](backlog.md) | User story registry |
+| [bugs.md](bugs.md) | Bug registry |
+| [ideas.md](ideas.md) | Raw ideas inbox |
+| [stories/](stories/) | Individual story files |
+| [bugs/](bugs/) | Individual bug files |
+| [plans/](plans/) | Implementation plans |
+| [research/](research/) | Deep reference docs |
