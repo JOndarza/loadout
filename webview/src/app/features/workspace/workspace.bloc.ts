@@ -17,4 +17,8 @@ export class WorkspaceBloc {
     for (const item of items) this.workspaceState.optimisticToggle(item.type, item.file);
     this.bridge.send({ command: 'bulkToggle', items });
   }
+
+  setUiState(key: string, value: unknown): void {
+    this.bridge.send({ command: 'setUiState', key, value });
+  }
 }

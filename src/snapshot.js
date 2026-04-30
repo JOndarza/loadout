@@ -22,6 +22,7 @@ function buildInitialData(root, storePath) {
     vscodeThemeKind:  detectVscodeThemeKind(),
     extensionVersion: EXT_VERSION,
     lastApplied:      getUiState(storePath).lastApplied ?? null,
+    uiState:          getUiState(storePath),
     claudeSettings:   getClaudeSettings(),
     memoryFiles:      getMemoryFiles(root),
     mcpServers:       getMcpServers(root),

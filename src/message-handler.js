@@ -406,6 +406,14 @@ function handleMessage(msg, refresh, postToWebview, root, storePath) {
       refresh();
       break;
     }
+
+    case 'setUiState': {
+      if (typeof msg.key !== 'string') return;
+      const state = getUiState(storePath);
+      state[msg.key] = msg.value;
+      saveUiState(storePath, state);
+      break;
+    }
   }
 }
 

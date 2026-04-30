@@ -105,6 +105,7 @@ export interface InitialData {
   claudeSettings: ClaudeSettings;
   memoryFiles: MemoryFile[];
   mcpServers: McpServer[];
+  uiState?: Record<string, unknown>;
 }
 
 export interface RegistryItem {
@@ -153,7 +154,8 @@ export type WebviewMessage =
   | { command: 'removeDirectory'; path: string }
   | { command: 'toggleHook'; event: string; groupIndex: number; hookIndex: number }
   | { command: 'setSandboxEnabled'; enabled: boolean }
-  | { command: 'toggleMcpServer'; name: string };
+  | { command: 'toggleMcpServer'; name: string }
+  | { command: 'setUiState'; key: string; value: unknown };
 
 // ─── Inbound (extension → webview) ───────────────────────────────────────────
 export type ExtensionMessage =

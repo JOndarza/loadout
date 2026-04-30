@@ -43,7 +43,11 @@
     </button>
   </div>
 
-  @if (visibleItems().length === 0) {
+  @if (showOnboarding()) {
+    <cm-onboarding-checklist (dismissed)="dismissOnboarding()" />
+  }
+
+  @if (visibleItems().length === 0 && !showOnboarding()) {
     <cm-empty
       title="Nothing to show"
       [description]="
@@ -53,7 +57,7 @@
       "
       icon="∅"
     />
-  } @else {
+  } @else if (visibleItems().length > 0) {
     <ul class="cm-ws-list" role="list">
       @for (item of visibleItems(); track key(item)) {
         <li (contextmenu)="onRowContextMenu($event, item)">
@@ -62,6 +66,9 @@
             [selected]="isSelected(item)"
             (click)="onCardClick(item, $any($event))"
           >
+            <span class="cm-ws-checkbox" [class.is-checked]="isSelected(item)" aria-hidden="true">
+              {{ isSelected(item) ? '✓' : '' }}
+            </span>
             <span class="cm-ws-type" [attr.data-type]="item.type">
               {{ item.type === 'agents' ? 'AGT' : item.type === 'commands' ? 'CMD' : 'SKL' }}
             </span>

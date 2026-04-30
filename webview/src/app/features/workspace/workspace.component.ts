@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SelectionModel } from '@angular/cdk/collections';
 import { WorkspaceBloc } from './workspace.bloc';
 import { WorkspaceState } from '@state/workspace.state';
 import { ProfilesState } from '@state/profiles.state';
@@ -7,6 +8,8 @@ import { TabFiltersState, type WorkspaceKind } from '@state/tab-filters.state';
 import { ShortcutsService } from '@core/shortcuts.service';
 import { SearchService } from '@core/search.service';
 import { ContextMenuService } from '@shared/overlays/context-menu.service';
+import { UiStateService } from '@core/state/ui-state.service';
+import { OnboardingChecklistComponent } from './onboarding-checklist.component';
 import {
   CmButtonComponent,
   CmCardComponent,
@@ -38,6 +41,7 @@ interface RowItem extends WorkspaceItem {
     CmEmptyComponent,
     CopyToClipboardDirective,
     HighlightMatchPipe,
+    OnboardingChecklistComponent,
   ],
   templateUrl: './workspace.component.html',
 })
@@ -49,18 +53,28 @@ export class WorkspaceComponent {
   private readonly shortcuts = inject(ShortcutsService);
   private readonly search = inject(SearchService);
   private readonly contextMenu = inject(ContextMenuService);
+  private readonly uiState = inject(UiStateService);
+
+  protected readonly showOnboarding = computed(
+    () => this.state.totalCount() === 0 && !this.uiState.get('onboarding.dismissed', false),
+  );
 
   readonly searchQuery = input<string>('');
 
   protected readonly orphanOnly = signal(false);
 
+  private readonly selectionModel = new SelectionModel<string>(true);
+  protected readonly selected = signal<Set<string>>(new Set());
+  private lastClickedKey = '';
+
   constructor() {
     this.shortcuts.events$.pipe(takeUntilDestroyed()).subscribe((e) => {
       if (e.type === 'orphanOnly') this.toggleNotInProfile();
     });
+    this.selectionModel.changed.pipe(takeUntilDestroyed()).subscribe(() => {
+      this.selected.set(new Set(this.selectionModel.selected));
+    });
   }
-  protected readonly selected = signal<Set<string>>(new Set());
-  private lastClickedKey = '';
 
   protected readonly kindOptions = computed<SegmentedOption<ItemKind>[]>(() => [
     { value: 'all', label: 'All', count: this.state.totalCount() },
@@ -100,6 +114,11 @@ export class WorkspaceComponent {
 
     return items;
   });
+
+  protected dismissOnboarding(): void {
+    this.uiState.setAll({ ...this.uiState.state(), 'onboarding.dismissed': true });
+    this.bloc.setUiState('onboarding.dismissed', true);
+  }
 
   protected onRowContextMenu(e: MouseEvent, item: RowItem): void {
     e.preventDefault();
@@ -154,34 +173,29 @@ export class WorkspaceComponent {
 
   protected toggleSelect(item: RowItem, e?: MouseEvent): void {
     const k = this.key(item);
-    const next = new Set(this.selected());
 
-    // Range select with shift if there's a previous click
     if (e?.shiftKey && this.lastClickedKey && this.lastClickedKey !== k) {
       const list = this.visibleItems();
       const startIdx = list.findIndex((i) => this.key(i) === this.lastClickedKey);
       const endIdx = list.findIndex((i) => this.key(i) === k);
       if (startIdx >= 0 && endIdx >= 0) {
         const [from, to] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
-        for (let i = from; i <= to; i++) next.add(this.key(list[i]));
-        this.selected.set(next);
+        this.selectionModel.select(...list.slice(from, to + 1).map((i) => this.key(i)));
         this.lastClickedKey = k;
         return;
       }
     }
 
-    if (next.has(k)) next.delete(k);
-    else next.add(k);
-    this.selected.set(next);
+    this.selectionModel.toggle(k);
     this.lastClickedKey = k;
   }
 
   protected isSelected(item: RowItem): boolean {
-    return this.selected().has(this.key(item));
+    return this.selectionModel.isSelected(this.key(item));
   }
 
   protected clearSelection(): void {
-    this.selected.set(new Set());
+    this.selectionModel.clear();
     this.lastClickedKey = '';
   }
 
