@@ -45,6 +45,15 @@ Loadout is a VSCode extension with two separate runtime processes:
 - `getCatalogItems()` — lists global catalog items with hash-based sync status
 - `pushToGlobal()` / `copyFromGlobal()` — catalog promotion/adoption flows
 - Hash store: `.claude-hashes.json` in `globalRoot` — SHA-256 per item, detects catalog updates
+- Hash cache: SHA-256 results are cached in memory (`Map`) keyed on `mtime + size + path`; avoids redundant I/O on repeated webview refreshes within the same extension host process lifetime
+- Token estimation: `estimateTokens()` reads file bytes and returns `Math.ceil(length / 4)`; `characters ÷ 4 ≈ tokens` is a rough heuristic for display only — not a billing-accurate count; exposed as `tokens: number` on `WorkspaceItem` and `CatalogItem`; the Workspace tab "Heavy" filter chip uses 1 000 tok as its cutoff
+- Description field: agent `.md` files and skill `SKILL.md` files may include a `description:` key in YAML frontmatter; `readDescription()` reads up to the first 16 384 chars, parses the frontmatter block (supports quoted and bare values), and truncates to 110 chars with `…`; the value is displayed in the panel item card
+
+  ```markdown
+  ---
+  description: "Short description shown in the Loadout panel"
+  ---
+  ```
 
 **Registry sync**: `update-claude.mjs`
 - Fetches `components.json` from registry URL
