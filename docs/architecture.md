@@ -38,6 +38,12 @@ Loadout is a VSCode extension with two separate runtime processes:
 | `src/validators.js` | `isSafeName()`, `isSafeArray()`, `isAllowedExternalUrl()` — input guards |
 | `src/registry.js` | `checkRegistryStatus()`, `runUpdateScript()`, `parseUpdateOutput()` — registry sync |
 | `src/constants.js` | `DEFAULT_REGISTRY_URL` |
+| `src/claude-settings.js` | `getClaudeSettings()` — reads and writes `~/.claude/settings.json` |
+| `src/decoration-provider.js` | `vscode.FileDecorationProvider` — decorates `.md` files under `.claude/` in the Explorer |
+| `src/logger.js` | `vscode.window.createOutputChannel('Loadout', { log: true })` — structured output channel |
+| `src/mcp-host.js` | Reads MCP server configs from `.claude.json` and `.mcp.json` |
+| `src/memory-files.js` | Scans for `CLAUDE.md` and rules files; returns `MemoryFile[]` with scope labels |
+| `src/task-provider.js` | `vscode.TaskProvider` — exposes one task per saved profile |
 
 **Data layer**: `data.js`
 - All reads/writes to `.claude/agents/`, `.claude/skills/`, `.claude/commands/`, `profiles.json`, `ui-state.json`, and catalog
@@ -69,23 +75,30 @@ webview/src/app/
 │   │   ├── workspace.state.ts    # agents + skills + commands toggle state
 │   │   ├── profiles.state.ts     # profile list + apply/save
 │   │   ├── catalog.state.ts      # catalog items + sync status
-│   │   └── settings.state.ts     # density, theme, defaultTab, registryUrl
+│   │   ├── settings.state.ts     # density, theme, defaultTab, registryUrl
+│   │   └── ui-state.service.ts   # signal store for ui-state.json flags; get<T>(key, fallback) + setAll(state)
 │   ├── vscode-bridge.service.ts  # postMessage wrapper
 │   ├── messages.ts               # all message type definitions (source of truth)
 │   ├── theme.service.ts          # dark/light/auto resolution
 │   ├── shortcuts.service.ts      # keyboard shortcut bindings
-│   ├── data-sync.service.ts      # feeds state services from bridge messages
+│   ├── data-sync.service.ts      # feeds state services from bridge messages; calls UiStateService.setAll()
+│   ├── search.service.ts         # wraps @leeoniya/ufuzzy; parseQuery(), fuzzyFilter<T>(), getMatchRanges()
 │   └── toast.service.ts          # toast notifications
 ├── layout/
 │   └── shell/                    # ShellComponent — header + tabs + status strip
 ├── features/
 │   ├── workspace/                # workspace.component.ts + workspace.bloc.ts
+│   │   └── onboarding-checklist.component.ts  # 3-step checklist; shown when totalCount === 0
 │   ├── profiles/                 # profiles.component.ts  + profiles.bloc.ts
 │   ├── catalog/                  # catalog.component.ts   + catalog.bloc.ts
 │   └── settings/                 # settings.component.ts  + settings.bloc.ts
 └── shared/
     ├── primitives/               # cm-card, cm-toggle, and other base components
+    │   └── highlight-match.pipe.ts  # pure pipe returning MatchSegment[]; no innerHTML
     └── overlays/                 # modal, toast, command palette
+        ├── context-menu.service.ts   # signal<ContextMenuConfig|null>; CDK-free fixed-position overlay
+        ├── context-menu.component.ts # @HostListener('document:click') closes on outside click
+        └── apply-confirm.component.ts # bottom-sheet (cm-sheet-scrim + cm-sheet); tabindex + keydown.escape
 ```
 
 ### Communication protocol
@@ -99,10 +112,12 @@ Message types are defined in `messages.ts` and are the single source of truth.
 | `initialData` | `InitialData` | First load, after `ready` |
 | `dataUpdate` | `InitialData` | After any filesystem mutation |
 | `vscodeThemeChanged` | `{ kind }` | User changes VSCode theme |
-| `registryStatus` | `RegistryItem[]` | After `checkRegistry` |
+| `registryStatus` | `{ items }` | After `checkRegistry` |
 | `updateStarted` | — | Registry sync begins |
 | `updateDone` | `{ updated, skipped, failed }` | Registry sync complete |
 | `testRegistryResult` | `{ ok, status?, error? }` | After `testRegistry` |
+| `applyProfilePreview` | `{ diff }` | Preview diff before applying a profile |
+| `profileImportPreview` | `{ ... }` | Preview data before confirming a profile import |
 | `notify` | `{ level, text }` | Toast/notification |
 
 **Webview → Extension:**
@@ -122,6 +137,14 @@ Message types are defined in `messages.ts` and are the single source of truth.
 | `testRegistry` | Validates a registry URL (HEAD check) |
 | `runUpdate` | Runs `update-claude.mjs` to sync from registry |
 | `updateSettings` | Settings change |
+| `setUiState` | `{ key, value }` — persists a flag to `ui-state.json`; no `dataUpdate` reply |
+| `updateClaudeSetting` | `{ key, value }` — writes a field in `~/.claude/settings.json` |
+| `openMemoryFile` | `{ path }` — opens a file in the VSCode editor |
+| `addEnvVar` / `removeEnvVar` | Config tab: manage environment variables |
+| `addPermissionRule` / `removePermissionRule` | Config tab: manage permission rules |
+| `pickAndAddDirectory` / `removeDirectory` | Config tab: manage allowed directories |
+| `toggleHook` / `setSandboxEnabled` | Config tab: toggle hooks and sandbox mode |
+| `toggleMcpServer` | Config tab: enable/disable an MCP server |
 | `revealCatalog` | Opens the global catalog folder in the OS file manager |
 | `openExternal` | Opens a validated HTTPS URL in the default browser |
 | `refresh` | Forces a `dataUpdate` reply without any mutation |
@@ -135,7 +158,7 @@ All domain state lives in `core/state/*.state.ts` signal services. A **BLoC laye
 ```
 VsCodeBridgeService.messages$ (Observable<ExtensionMessage>)
        ↓ DataSyncService subscribes → routes domain data
-WorkspaceState / ProfilesState / CatalogState / SettingsState  (signal services)
+WorkspaceState / ProfilesState / CatalogState / SettingsState / UiStateService  (signal services)
        ↓ expose readonly signals
   Components (read-only, dumb views)
        ↓ user actions → *.bloc.ts methods
@@ -144,12 +167,30 @@ WorkspaceState / ProfilesState / CatalogState / SettingsState  (signal services)
   Extension host (mutates filesystem, replies with dataUpdate)
 ```
 
+`UiStateService` is fed by `DataSyncService.applyData()` via `setAll(state)` when `initialData` or `dataUpdate` arrives. Components call `uiState.get<T>(key, fallback)` for individual flags (e.g. `'onboarding.dismissed'`). Mutations go through `WorkspaceBloc.setUiState()` → `bridge.send('setUiState', { key, value })` — no `dataUpdate` round-trip.
+
 **BLoC responsibilities:**
 - Action methods that wrap `bridge.send()` calls
 - Feature-local reactive state (`private signal<T>()` exposed via `.asReadonly()`)
 - Inbound message subscriptions (`takeUntilDestroyed()` in constructor)
 
 **Only these services may inject `VsCodeBridgeService` directly:** the four feature BLoCs, `DataSyncService` (domain routing + `refresh()`), and `ThemeService` (theme change subscription).
+
+### Angular CDK integration
+
+`@angular/cdk/collections` is used in `WorkspaceComponent`: `SelectionModel<string>` replaces the manual `Set<string>` for multi-select state. The `selectionModel.changed` observable is wired to a `selected` signal via `takeUntilDestroyed()`.
+
+CDK injects styles at runtime, which requires a CSP nonce. `app.config.ts` provides it:
+
+```ts
+{ provide: CSP_NONCE, useFactory: () => document.querySelector('meta[name="csp-nonce"]')?.content }
+```
+
+This reads the nonce from the `<meta>` tag injected by `src/webview-loader.js`, keeping CDK style injection compatible with the strict nonce-based CSP.
+
+### Search
+
+`SearchService` wraps `@leeoniya/ufuzzy`. `parseQuery(raw)` strips typed filter tokens (`type:`, `active:`, `tok>`) before passing the remainder to uFuzzy. `fuzzyFilter<T>(items, getHaystack, query)` returns filtered items; `getMatchRanges(text, query)` returns character ranges for highlight rendering. `HighlightMatchPipe` consumes those ranges and returns `MatchSegment[]` — no `innerHTML` is used.
 
 ## Storage
 
@@ -162,11 +203,14 @@ WorkspaceState / ProfilesState / CatalogState / SettingsState  (signal services)
 | `context.storageUri/.claude-store/skills/` | Inactive skill files |
 | `context.storageUri/.claude-store/commands/` | Inactive command files |
 | `context.storageUri/profiles.json` | Named loadout snapshots |
-| `context.storageUri/ui-state.json` | Last active tab, density, etc. |
+| `context.storageUri/ui-state.json` | Last active tab, density, UI flags (e.g. `onboarding.dismissed`) |
 | `~/.claude/agents/` (globalRoot) | Global catalog agents |
 | `~/.claude/skills/` (globalRoot) | Global catalog skills |
 | `~/.claude/commands/` (globalRoot) | Global catalog commands |
 | `~/.claude/.claude-hashes.json` | Hash store for sync detection |
+| `~/.claude/settings.json` | Claude Code settings; read/written by `src/claude-settings.js` |
+
+`InitialData` now includes `uiState?: Record<string, unknown>` — the full `ui-state.json` object (not just `lastApplied`). `DataSyncService` passes it to `UiStateService.setAll()` on every `initialData` and `dataUpdate`.
 
 ## Security
 

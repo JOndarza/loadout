@@ -13,6 +13,8 @@ ln -s "$(pwd)" "$HOME/.vscode/extensions/loadout"
 # Reload VSCode — the Loadout activity bar icon appears
 ```
 
+The compiled webview (`webview-dist/`) is committed to the repo, so no build step is required for basic use.
+
 **Option B — copy with `deploy.js`:**
 
 ```bash
@@ -23,12 +25,10 @@ node deploy.js
 `deploy.js` copies the following into `~/.vscode/extensions/loadout/`:
 
 - `extension.js`, `data.js`, `update-claude.mjs`, `package.json`, `icon-activity.svg`
-- `src/` — the nine extension-host modules split from `extension.js`
+- `src/` — the extension-host modules split from `extension.js`
 - `webview-dist/` — the pre-built Angular bundle
 
 Use the copy approach when you need a clean, self-contained install without a symlink (e.g., testing the exact files that would ship).
-
-The compiled webview (`webview-dist/`) is committed to the repo so no build step is required for basic use.
 
 ## Development workflow
 
@@ -47,12 +47,12 @@ cd webview
 npm run build        # production build → ../webview-dist/
 ```
 
-Commit the updated `webview-dist/` alongside your changes.
+Commit the updated `webview-dist/` alongside your source changes.
 
 ## Opening the panel
 
-- Activity bar icon (left sidebar) → click
-- Command palette → `Loadout: Open Panel`
+- Activity bar icon (left sidebar) — click
+- Command palette — `Loadout: Open Panel`
 - Keyboard shortcut: `Cmd+Shift+Alt+C` (mac) / `Ctrl+Shift+Alt+C` (win/linux)
 
 ## Extension manifest key points
@@ -61,14 +61,16 @@ Commit the updated `webview-dist/` alongside your changes.
 | --- | --- |
 | `main` | `./extension.js` |
 | `engines.vscode` | `^1.80.0` |
-| `contributes.views` | `loadout.sidebarView` (webview) |
+| `contributes.views` | `loadout.sidebarView` (webview panel) |
+| `contributes.walkthroughs` | `loadout.gettingStarted` (4-step native onboarding) |
+| `contributes.taskDefinitions` | `loadout-apply` (one task per saved profile) |
 | `configuration` | `loadout.globalCatalogPath` — custom catalog path |
 
 ## Configuration
 
 **`loadout.globalCatalogPath`** — string, default `~/.claude/`
 
-Overrides the global catalog location. Useful for teams sharing a catalog stored at a non-default path (e.g. a mounted network drive or a company-wide dotfiles directory). Set it via **VSCode Settings UI** (`Preferences: Open Settings (UI)` → search `globalCatalogPath`) or directly in `settings.json`:
+Overrides the global catalog location. Useful for teams sharing a catalog stored at a non-default path (e.g., a mounted network drive or a company-wide dotfiles directory). Set it via **VSCode Settings UI** (`Preferences: Open Settings (UI)` → search `globalCatalogPath`) or directly in `settings.json`:
 
 ```json
 "loadout.globalCatalogPath": "/shared/team/.claude"

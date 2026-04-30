@@ -5,9 +5,9 @@
 - **Style**: two-process — Extension Host (Node.js) ↔ Webview (Angular 21) via `postMessage`
 - **Dependency rule**: Webview never accesses VSCode APIs or filesystem directly; all side effects flow through the bridge
 - **Communication protocol**: typed messages in `webview/src/app/core/messages.ts`
-  - `extension → webview`: `initialData` on load, `dataUpdate` after mutations, `vscodeThemeChanged`, `notify`
-  - `webview → extension`: `ready`, `toggle`, `saveProfile`, `applyProfile`, `runUpdate`, etc.
-- **Webview state**: 4 signal-based state services in `core/state/` (workspace, profiles, catalog, settings); `VsCodeBridgeService` feeds them; components are dumb; workspace and catalog state each carry agents, skills, and commands signals
+  - `extension → webview`: `initialData` (includes `uiState?: Record<string,unknown>`), `dataUpdate`, `vscodeThemeChanged`, `notify`, `registryStatus`, `testRegistryResult`, `applyProfilePreview`, `profileImportPreview`
+  - `webview → extension`: `ready`, `toggle`, `saveProfile`, `applyProfile`, `runUpdate`, `setUiState { key, value }` (no dataUpdate reply), `updateClaudeSetting { key, value }`, `openMemoryFile { path }`, `addEnvVar`, `removeEnvVar`, `addPermissionRule`, `removePermissionRule`, `pickAndAddDirectory`, `removeDirectory`, `toggleHook`, `setSandboxEnabled`, `toggleMcpServer`, etc.
+- **Webview state**: 5 signal-based state services — `core/state/` (workspace, profiles, catalog, settings) + `core/ui-state.service.ts`; `DataSyncService` feeds all of them; `UiStateService` exposes `get<T>(key, fallback)` / `setAll(state)`; components are dumb; workspace and catalog state each carry agents, skills, and commands signals
 - **Storage**:
   - Per-workspace: `context.storageUri` — inactive items store, profiles.json, ui-state.json
   - Global: `~/.claude/` (or `loadout.globalCatalogPath`) — shared agents/skills/commands catalog, `.claude-hashes.json`
