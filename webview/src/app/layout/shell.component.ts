@@ -10,20 +10,21 @@ import {
   ElementRef,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DataSyncService } from '../core/data-sync.service';
-import { VsCodeBridgeService } from '../core/vscode-bridge.service';
-import { ProfilesState } from '../core/state/profiles.state';
-import { CatalogState } from '../core/state/catalog.state';
-import { WorkspaceState } from '../core/state/workspace.state';
-import { SettingsState } from '../core/state/settings.state';
-import { ShortcutsService } from '../core/shortcuts.service';
-import { WorkspaceComponent } from '../features/workspace/workspace.component';
-import { ProfilesComponent } from '../features/profiles/profiles.component';
-import { CatalogComponent } from '../features/catalog/catalog.component';
-import { SettingsComponent } from '../features/settings/settings.component';
-import { CommandPaletteComponent } from '../shared/overlays/command-palette.component';
+import { DataSyncService } from '@core/data-sync.service';
+import { ProfilesBloc } from '@features/profiles/profiles.bloc';
+import { ProfilesState } from '@state/profiles.state';
+import { CatalogState } from '@state/catalog.state';
+import { WorkspaceState } from '@state/workspace.state';
+import { SettingsState } from '@state/settings.state';
+import { ShortcutsService } from '@core/shortcuts.service';
+import { WorkspaceComponent } from '@features/workspace/workspace.component';
+import { ProfilesComponent } from '@features/profiles/profiles.component';
+import { CatalogComponent } from '@features/catalog/catalog.component';
+import { SettingsComponent } from '@features/settings/settings.component';
+import { ConfigComponent } from '@features/config/config.component';
+import { CommandPaletteComponent } from '@shared/overlays/command-palette.component';
 
-type TabId = 'workspace' | 'profiles' | 'catalog' | 'settings';
+type TabId = 'workspace' | 'profiles' | 'catalog' | 'config' | 'settings';
 
 @Component({
   selector: 'cm-shell',
@@ -34,13 +35,14 @@ type TabId = 'workspace' | 'profiles' | 'catalog' | 'settings';
     ProfilesComponent,
     CatalogComponent,
     SettingsComponent,
+    ConfigComponent,
     CommandPaletteComponent,
   ],
   templateUrl: './shell.component.html',
 })
 export class ShellComponent {
   protected readonly sync = inject(DataSyncService);
-  private readonly bridge = inject(VsCodeBridgeService);
+  private readonly profilesBloc = inject(ProfilesBloc);
   protected readonly workspace = inject(WorkspaceState);
   protected readonly profiles = inject(ProfilesState);
   protected readonly catalog = inject(CatalogState);
@@ -61,20 +63,35 @@ export class ShellComponent {
 
   protected readonly density = computed(() => this.settings.settings().density);
 
+  private static readonly TOKEN_BUDGET_DEFAULT = 200_000;
+
+  protected readonly tokenBudgetPct = computed(() => {
+    const budget = (this.settings.settings() as { tokenBudget?: number }).tokenBudget
+      ?? ShellComponent.TOKEN_BUDGET_DEFAULT;
+    return Math.min(this.workspace.totalActiveTokens() / budget * 100, 100);
+  });
+
+  protected readonly tokenBudgetColor = computed(() => {
+    const pct = this.tokenBudgetPct();
+    if (pct >= 90) return 'var(--error)';
+    if (pct >= 70) return 'var(--primary)';
+    return 'var(--primary-dim)';
+  });
+
   private appliedDefaultTab = false;
 
   constructor() {
     // Wire keyboard shortcuts to UI actions
     this.shortcuts.events$.pipe(takeUntilDestroyed()).subscribe((e) => {
       if (e.type === 'tab') {
-        const tabs: TabId[] = ['workspace', 'profiles', 'catalog'];
+        const tabs: TabId[] = ['workspace', 'profiles', 'catalog', 'config'];
         this.activeTab.set(tabs[e.index]);
       } else if (e.type === 'search') {
         this.searchInput()?.nativeElement.focus();
       } else if (e.type === 'saveProfile') {
         // TODO: replace with inline prompt UI
         const name = window.prompt('Save as profile:')?.trim();
-        if (name) this.bridge.send({ command: 'saveProfile', name });
+        if (name) this.profilesBloc.saveProfile(name);
       }
     });
 

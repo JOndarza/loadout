@@ -1,0 +1,143 @@
+// =============================================================================
+// Pages — config
+// =============================================================================
+
+@use '../abstracts' as *;
+
+cm-config {
+  display: block;
+}
+
+// ─── Chips (permission rules) ────────────────────────────────────────────────
+.cm-cfg-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  min-height: 24px;
+}
+
+.cm-cfg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 22px;
+  padding: 0 6px 0 var(--sp-2);
+  border-radius: var(--r-full);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.06);
+  @include ring(rgba(255, 255, 255, 0.1));
+
+  &--allow {
+    color: var(--success, #4ade80);
+    background: rgba(74, 222, 128, 0.08);
+    @include ring(rgba(74, 222, 128, 0.2));
+  }
+
+  &--deny {
+    color: var(--error, #f87171);
+    background: rgba(248, 113, 113, 0.08);
+    @include ring(rgba(248, 113, 113, 0.2));
+  }
+
+  &--ask {
+    color: var(--gold);
+    background: var(--gold-subtle);
+    @include ring(rgba(var(--gold-rgb), 0.25));
+  }
+}
+
+[data-theme='light'] .cm-cfg-chip {
+  background: rgba(0, 0, 0, 0.04);
+  @include ring(rgba(0, 0, 0, 0.08));
+}
+
+.cm-cfg-chip-remove {
+  @include button-reset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 8px;
+  color: currentColor;
+  opacity: 0.6;
+  transition: opacity var(--t-fast);
+
+  &:hover { opacity: 1; }
+}
+
+.cm-cfg-empty {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.cm-cfg-add-row {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+// ─── Additional directories ──────────────────────────────────────────────────
+.cm-cfg-add-dir {
+  padding: var(--sp-2) 0;
+}
+
+// ─── MCP Servers ─────────────────────────────────────────────────────────────
+.cm-cfg-mcp-name {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.cm-cfg-mcp-scope {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-full);
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06);
+
+  &[data-scope='user']    { color: var(--primary); background: rgba(var(--primary-rgb), 0.1); }
+  &[data-scope='project'] { color: var(--gold);    background: var(--gold-subtle); }
+}
+
+// ─── Hooks ───────────────────────────────────────────────────────────────────
+.cm-cfg-hook-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 6px;
+}
+
+.cm-cfg-hook-event {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.cm-cfg-hook-matcher {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--primary);
+}
+
+.cm-cfg-hook-cmd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

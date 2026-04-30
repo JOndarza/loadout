@@ -62,7 +62,19 @@ Commit the updated `webview-dist/` alongside your changes.
 | `main` | `./extension.js` |
 | `engines.vscode` | `^1.80.0` |
 | `contributes.views` | `loadout.sidebarView` (webview) |
-| `configuration` | `claudeManager.globalCatalogPath` — custom catalog path |
+| `configuration` | `loadout.globalCatalogPath` — custom catalog path |
+
+## Configuration
+
+**`loadout.globalCatalogPath`** — string, default `~/.claude/`
+
+Overrides the global catalog location. Useful for teams sharing a catalog stored at a non-default path (e.g. a mounted network drive or a company-wide dotfiles directory). Set it via **VSCode Settings UI** (`Preferences: Open Settings (UI)` → search `globalCatalogPath`) or directly in `settings.json`:
+
+```json
+"loadout.globalCatalogPath": "/shared/team/.claude"
+```
+
+If the value is blank or missing, Loadout falls back to `~/.claude/`.
 
 ## Registry sync
 
@@ -75,7 +87,7 @@ The default registry URL is `https://www.aitmpl.com/components.json`. Users can 
 
 ## VSCode Marketplace
 
-Not yet published. Add a `LICENSE` file and update `package.json` fields (`publisher`, `repository`, `icon`) before publishing.
+Not yet published. Update `package.json` fields (`publisher`, `repository`, `icon`) before publishing. MIT license is in place.
 
 ## Extracting to its own repo (when needed)
 

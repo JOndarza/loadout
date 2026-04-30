@@ -1,94 +1,99 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { SettingsState } from '../../core/state/settings.state';
-import { CatalogState } from '../../core/state/catalog.state';
-import { VsCodeBridgeService } from '../../core/vscode-bridge.service';
-import { DataSyncService } from '../../core/data-sync.service';
-import { ToastService } from '../../core/toast.service';
-import { ShortcutsService } from '../../core/shortcuts.service';
-import { CmButtonComponent } from '../../shared/primitives';
-import type { Settings } from '../../core/messages';
+import { SettingsState } from '@state/settings.state';
+import { CatalogState } from '@state/catalog.state';
+import { ClaudeSettingsState } from '@state/claude-settings.state';
+import { SettingsBloc } from './settings.bloc';
+import { DataSyncService } from '@core/data-sync.service';
+import { ShortcutsService } from '@core/shortcuts.service';
+import { CmButtonComponent, CmToggleComponent } from '@shared/primitives';
+import type { Settings } from '@core/messages';
 
 @Component({
   selector: 'cm-settings',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, CmButtonComponent],
+  imports: [FormsModule, CmButtonComponent, CmToggleComponent],
   templateUrl: './settings.component.html',
 })
 export class SettingsComponent {
-  protected readonly settings = inject(SettingsState);
-  protected readonly catalog = inject(CatalogState);
-  protected readonly sync = inject(DataSyncService);
-  private readonly bridge = inject(VsCodeBridgeService);
-  private readonly toast = inject(ToastService);
-  private readonly sc = inject(ShortcutsService);
+  protected readonly settings       = inject(SettingsState);
+  protected readonly catalog        = inject(CatalogState);
+  protected readonly claudeSettings = inject(ClaudeSettingsState);
+  protected readonly sync           = inject(DataSyncService);
+  private readonly bloc             = inject(SettingsBloc);
+  private readonly sc               = inject(ShortcutsService);
 
   protected readonly registryUrlDraft = signal('');
-  protected readonly registryTestResult = signal<'idle' | 'testing' | 'ok' | 'fail'>('idle');
-  protected readonly registryTestMessage = signal('');
+  protected readonly newEnvKey   = signal('');
+  protected readonly newEnvValue = signal('');
+  protected readonly registryTestResult = this.bloc.registryTestResult;
+  protected readonly registryTestMessage = this.bloc.registryTestMessage;
 
   protected readonly registryUrl = computed(() => this.settings.settings().registryUrl);
 
-  constructor() {
-    this.bridge.messages$.pipe(takeUntilDestroyed()).subscribe((m) => {
-      if (m.command === 'testRegistryResult') {
-        this.registryTestResult.set(m.ok ? 'ok' : 'fail');
-        this.registryTestMessage.set(m.ok ? `HTTP ${m.status}` : (m.error ?? 'Failed'));
-      }
-    });
-  }
-
-  private readonly settingLabels: Partial<Record<keyof Settings, Record<string, string>>> = {
-    density: { compact: 'Compact', comfortable: 'Comfortable' },
-    theme:   { dark: 'Dark theme', light: 'Light theme', auto: 'Auto theme' },
-    defaultTab: { workspace: 'Default: Workspace', profiles: 'Default: Profiles', catalog: 'Default: Catalog', last: 'Default: Last opened' },
-  };
-
   protected update<K extends keyof Settings>(key: K, value: Settings[K]): void {
-    const partial: Partial<Settings> = { [key]: value };
-    this.settings.setAll(partial);
-    this.bridge.send({ command: 'updateSettings', settings: partial });
-    const label = key === 'registryUrl'
-      ? 'Registry URL saved'
-      : (this.settingLabels[key]?.[value as string] ?? 'Saved');
-    this.toast.show(label);
+    this.bloc.updateSettings(key, value);
   }
 
   protected revealCatalog(): void {
-    this.bridge.send({ command: 'revealCatalog' });
+    this.bloc.revealCatalog();
   }
 
   protected onRegistryUrlInput(v: string): void {
     this.registryUrlDraft.set(v);
-    this.registryTestResult.set('idle');
   }
 
   protected commitRegistryUrl(): void {
     const url = this.registryUrlDraft().trim();
     if (url && url !== this.registryUrl()) {
-      this.update('registryUrl', url);
+      this.bloc.updateSettings('registryUrl', url);
     }
   }
 
+  protected updateClaudeSetting(key: string, value: string | boolean | null): void {
+    this.bloc.updateClaudeSetting(key, value);
+  }
+
+  protected openMemoryFile(path: string): void {
+    this.bloc.openMemoryFile(path);
+  }
+
+  protected addEnvVar(): void {
+    const key = this.newEnvKey().trim();
+    const val = this.newEnvValue().trim();
+    if (!key) return;
+    this.bloc.addEnvVar(key, val);
+    this.newEnvKey.set('');
+    this.newEnvValue.set('');
+  }
+
+  protected removeEnvVar(key: string): void {
+    this.bloc.removeEnvVar(key);
+  }
+
   protected openLink(url: string): void {
-    this.bridge.send({ command: 'openExternal', url });
+    this.bloc.openExternal(url);
   }
 
   protected testRegistry(): void {
     const url = (this.registryUrlDraft() || this.registryUrl()).trim();
     if (!url) return;
-    this.registryTestResult.set('testing');
-    this.registryTestMessage.set('');
-    this.bridge.send({ command: 'testRegistry', url });
+    this.bloc.testRegistry(url);
   }
 
+  protected readonly openFolderLabel = this.sc.isMac
+    ? 'Open in Finder'
+    : /win/i.test(navigator.userAgent)
+      ? 'Open in Explorer'
+      : 'Open folder';
+
   protected readonly shortcuts = [
-    { keys: ['1', '2', '3'], action: 'Switch tabs (Workspace · Profiles · Catalog)' },
+    { keys: ['1', '2', '3', '4'], action: 'Switch tabs (Workspace · Profiles · Catalog · Config)' },
     { keys: ['/'], action: 'Focus search' },
     { keys: [this.sc.modKey, 'K'], action: 'Open command palette' },
     { keys: ['a'], action: 'Toggle "Active only" filter in Workspace' },
+    { keys: ['p'], action: 'Toggle "Not in profile" filter in Workspace' },
     { keys: ['s'], action: 'Save current state as new loadout' },
     { keys: ['Esc'], action: 'Close palette / cancel inline edits' },
   ];

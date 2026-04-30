@@ -1,5 +1,6 @@
 import {
   ApplicationConfig,
+  CSP_NONCE,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
@@ -10,5 +11,10 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideAnimations(),
+    {
+      provide: CSP_NONCE,
+      useFactory: () =>
+        document.querySelector<HTMLMetaElement>('meta[name="csp-nonce"]')?.content ?? null,
+    },
   ],
 };

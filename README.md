@@ -94,11 +94,12 @@ After `npm run watch`, reload the VSCode window to see changes (or run the `Load
 
 ### Adding a new tab or feature
 
-1. Create a feature component under `webview/src/app/features/<name>/`.
-2. Add a state service if it owns persisted data.
-3. Wire any new message types in `webview/src/app/core/messages.ts`.
-4. Add the corresponding handler in `extension.js` `handleMessage()`.
-5. Import the component in `ShellComponent` and add a `@case` in the tab switch.
+1. Create `webview/src/app/features/<name>/<name>.bloc.ts` — handles all `bridge.send()` calls and inbound message subscriptions for the feature.
+2. Create `webview/src/app/features/<name>/<name>.component.ts` — injects state service(s) and the BLoC; never injects `VsCodeBridgeService` directly.
+3. Add a state service under `core/state/` if the feature owns persisted domain data.
+4. Wire any new message types in `webview/src/app/core/messages.ts` (single source of truth).
+5. Add the corresponding handler in `extension.js` `handleMessage()`.
+6. Import the component in `ShellComponent` and add a `@case` in the tab switch.
 
 ---
 
@@ -126,4 +127,4 @@ After the move, this README and the directory structure are already self-contain
 
 ## License
 
-TBD — currently unlicensed. Add a `LICENSE` file before public distribution.
+MIT © 2026 Joaquin Ondarza Ortega

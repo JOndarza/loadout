@@ -18,7 +18,7 @@ function getWorkspaceRoot() {
 }
 
 function getGlobalRoot() {
-  const cfg = vscode.workspace.getConfiguration('claudeManager').get('globalCatalogPath');
+  const cfg = vscode.workspace.getConfiguration('loadout').get('globalCatalogPath');
   return cfg?.trim() || path.join(os.homedir(), '.claude');
 }
 
@@ -106,6 +106,16 @@ function readDescription(filePath) {
   } catch { return ''; }
 }
 
+function readFrontmatterField(filePath, field) {
+  try {
+    const content = fs.readFileSync(filePath, 'utf8').slice(0, 4096);
+    const fm = content.match(/^---\n([\s\S]*?)\n---/);
+    if (!fm) return null;
+    const m = fm[1].match(new RegExp(`^${field}:\\s*(.+)$`, 'm'));
+    return m ? m[1].trim() : null;
+  } catch { return null; }
+}
+
 // ─── Legacy store migration ───────────────────────────────────────────────────
 // One-time copy from <root>/.claude-store/ to the new storePath. The marker
 // file ensures we never re-copy after the user has modified data in storePath.
@@ -131,7 +141,9 @@ function getItems(root, storePath, type) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.isFile() && entry.name.endsWith('.md')) {
         const fp = path.join(dir, entry.name);
-        items.push({ name: entry.name.replace('.md', ''), file: entry.name, active, tokens: estimateTokens(fp), description: readDescription(fp) });
+        const item = { name: entry.name.replace('.md', ''), file: entry.name, active, tokens: estimateTokens(fp), description: readDescription(fp) };
+        if (type === 'agents') item.memoryScope = readFrontmatterField(fp, 'memory');
+        items.push(item);
       } else if (entry.isDirectory()) {
         const skillFile = path.join(dir, entry.name, 'SKILL.md');
         if (fs.existsSync(skillFile)) {
@@ -266,11 +278,12 @@ function reorderProfiles(storePath, names) {
   saveProfiles(storePath, profiles);
 }
 
-function updateProfileItems(storePath, name, { agents, skills }) {
+function updateProfileItems(storePath, name, { agents, skills, commands }) {
   const profiles = getProfiles(storePath);
   if (!profiles[name]) return;
-  if (Array.isArray(agents)) profiles[name].agents = agents;
-  if (Array.isArray(skills)) profiles[name].skills = skills;
+  if (Array.isArray(agents))   profiles[name].agents   = agents;
+  if (Array.isArray(skills))   profiles[name].skills   = skills;
+  if (Array.isArray(commands)) profiles[name].commands = commands;
   saveProfiles(storePath, profiles);
 }
 
@@ -278,11 +291,19 @@ function duplicateProfile(storePath, from, to) {
   const profiles = getProfiles(storePath);
   if (!profiles[from] || profiles[to]) return;
   profiles[to] = {
-    agents:    [...(profiles[from].agents || [])],
-    skills:    [...(profiles[from].skills || [])],
+    agents:    [...(profiles[from].agents   || [])],
+    skills:    [...(profiles[from].skills   || [])],
+    commands:  [...(profiles[from].commands || [])],
     createdAt: new Date().toISOString(),
     order:     Object.keys(profiles).length,
   };
+  saveProfiles(storePath, profiles);
+}
+
+function updateProfileDescription(storePath, name, description) {
+  const profiles = getProfiles(storePath);
+  if (!profiles[name]) return;
+  profiles[name].description = String(description).slice(0, 500);
   saveProfiles(storePath, profiles);
 }
 
@@ -306,7 +327,7 @@ module.exports = {
   getItems, toggleItem,
   copyFromGlobal,
   getProfiles, saveProfiles,
-  renameProfile, reorderProfiles, updateProfileItems, duplicateProfile,
+  renameProfile, reorderProfiles, updateProfileItems, duplicateProfile, updateProfileDescription,
   getUiState, saveUiState,
   pushToGlobal, getCatalogItems,
 };

@@ -1,0 +1,24 @@
+# Story File Template
+
+Created only when status changes to `In progress`.
+
+```markdown
+# {ID} — {Title}
+
+## Description
+[What the user needs and why]
+
+## Acceptance Criteria
+- [ ] Criterion 1
+- [ ] Criterion 2
+
+## Technical Notes
+[Implementation approach, affected files, dependencies]
+
+## Status
+- **Priority**: ASAP / High / Medium / Low
+- **Status**: Pending / In progress / In review / Blocked / On hold / Completed / Cancelled
+- **Created**: YYYY-MM-DD
+- **Completed**: YYYY-MM-DD (fill when done)
+- **Blocked reason**: (fill if Blocked/On hold/Cancelled)
+```

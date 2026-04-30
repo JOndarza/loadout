@@ -41,7 +41,7 @@ function loadWebviewHtml(panel, context) {
   ].join('; ');
   html = html.replace(
     '<!-- {{CSP_META}} -->',
-    `<meta http-equiv="Content-Security-Policy" content="${csp}">`,
+    `<meta http-equiv="Content-Security-Policy" content="${csp}">\n  <meta name="csp-nonce" content="${nonce}">`,
   );
   html = html.replace('<!-- {{FONT_LINKS}} -->', '');
 

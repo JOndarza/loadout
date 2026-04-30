@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import type { Settings } from '../messages';
+import type { Settings } from '@core/messages';
 
 const DEFAULT: Settings = {
   density: 'comfortable',

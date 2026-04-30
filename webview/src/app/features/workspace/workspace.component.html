@@ -2,8 +2,8 @@
   <div class="cm-ws-toolbar">
     <cm-segmented
       [options]="kindOptions()"
-      [value]="kind()"
-      (valueChange)="kind.set($any($event))"
+      [value]="filters.workspace().kind"
+      (valueChange)="setKind($any($event))"
       ariaLabel="Filter by kind"
     />
 
@@ -12,8 +12,8 @@
     <button
       type="button"
       class="cm-ws-chip"
-      [class.is-on]="activeOnly()"
-      (click)="activeOnly.set(!activeOnly())"
+      [class.is-on]="filters.workspace().activeOnly"
+      (click)="toggleActive()"
       title="Show only active items"
     >
       <span class="cm-ws-chip-dot"></span>
@@ -23,39 +23,68 @@
     <button
       type="button"
       class="cm-ws-chip"
-      [class.is-on]="heavyOnly()"
-      (click)="heavyOnly.set(!heavyOnly())"
+      [class.is-on]="filters.workspace().heavyOnly"
+      (click)="toggleHeavy()"
       title="Show items over 1k tokens"
     >
       <span class="cm-ws-chip-dot"></span>
       Heavy
     </button>
+
+    <button
+      type="button"
+      class="cm-ws-chip"
+      [class.is-on]="orphanOnly()"
+      (click)="toggleNotInProfile()"
+      title="Show items not referenced by any saved profile"
+    >
+      <span class="cm-ws-chip-dot"></span>
+      Not in profile
+    </button>
   </div>
 
-  @if (visibleItems().length === 0) {
+  @if (showOnboarding()) {
+    <cm-onboarding-checklist (dismissed)="dismissOnboarding()" />
+  }
+
+  @if (visibleItems().length === 0 && !showOnboarding()) {
     <cm-empty
       title="Nothing to show"
       [description]="
-        searchQuery() || activeOnly() || heavyOnly()
+        searchQuery() || filters.workspace().activeOnly || filters.workspace().heavyOnly
           ? 'No items match the current filters.'
           : 'Add files to .claude/agents/ or .claude/skills/ to start using Loadout.'
       "
       icon="∅"
     />
-  } @else {
+  } @else if (visibleItems().length > 0) {
     <ul class="cm-ws-list" role="list">
       @for (item of visibleItems(); track key(item)) {
-        <li>
+        <li (contextmenu)="onRowContextMenu($event, item)">
           <cm-card
             [active]="item.active"
             [selected]="isSelected(item)"
             (click)="onCardClick(item, $any($event))"
           >
-            <span class="cm-ws-type" [attr.data-type]="item.type">
-              {{ item.type === 'agents' ? 'AGT' : 'SKL' }}
+            <span class="cm-ws-checkbox" [class.is-checked]="isSelected(item)" aria-hidden="true">
+              {{ isSelected(item) ? '✓' : '' }}
             </span>
+            <span class="cm-ws-type" [attr.data-type]="item.type">
+              {{ item.type === 'agents' ? 'AGT' : item.type === 'commands' ? 'CMD' : 'SKL' }}
+            </span>
+            @if (item.type === 'agents' && item.memoryScope) {
+              <span class="cm-ws-memory" [attr.data-scope]="item.memoryScope" [title]="'memory: ' + item.memoryScope">M</span>
+            }
             <div class="cm-ws-info">
-              <div class="cm-ws-name" [cmCopy]="item.name" title="Click to copy">{{ item.name }}</div>
+              <div class="cm-ws-name" [cmCopy]="item.name" title="Click to copy">
+              @for (seg of (item.name | highlightMatch : nameRanges(item.name)); track $index) {
+                @if (seg.match) {
+                  <mark class="cm-search-match">{{ seg.text }}</mark>
+                } @else {
+                  {{ seg.text }}
+                }
+              }
+            </div>
               @if (item.description) {
                 <div class="cm-ws-desc">{{ item.description }}</div>
               } @else {

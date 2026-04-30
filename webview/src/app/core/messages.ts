@@ -1,11 +1,57 @@
 // ─── Messages exchanged between extension host and webview ───────────────────
 
+export type ItemType = 'agents' | 'skills' | 'commands';
+
 export interface WorkspaceItem {
   name: string;
   file: string;
   active: boolean;
   tokens: number;
   description: string;
+  memoryScope?: string | null;
+}
+
+export interface McpServer {
+  name: string;
+  scope: 'user' | 'project';
+  disabled: boolean;
+  type?: string | null;
+  url?: string | null;
+  command?: string | null;
+}
+
+export interface HookEntry {
+  event: string;
+  matcher: string;
+  type: string;
+  command?: string | null;
+  url?: string | null;
+  disabled: boolean;
+  groupIndex: number;
+  hookIndex: number;
+}
+
+export interface ClaudePermissions {
+  allow: string[];
+  deny: string[];
+  ask: string[];
+  additionalDirectories: string[];
+}
+
+export interface ClaudeSettings {
+  model?: string | null;
+  effortLevel?: string | null;
+  autoMemoryEnabled?: boolean | null;
+  env?: Record<string, string>;
+  permissions?: ClaudePermissions;
+  hooks?: HookEntry[];
+  sandboxEnabled?: boolean | null;
+}
+
+export interface MemoryFile {
+  path: string;
+  scope: 'user' | 'project' | 'local' | 'rules';
+  pathsGlob?: string | null;
 }
 
 export interface CatalogItem {
@@ -17,11 +63,22 @@ export interface CatalogItem {
   syncStatus: 'synced' | 'localModified' | 'sharedUpdated' | 'diverged' | null;
 }
 
+export interface PendingItems {
+  agents: string[];
+  skills: string[];
+  commands: string[];
+}
+
 export interface Profile {
   agents: string[];
   skills: string[];
+  commands?: string[];
   createdAt: string;
   order?: number;
+  description?: string;
+  pendingItems?: PendingItems;
+  lastAppliedAt?: string;
+  appliedCount?: number;
 }
 
 export interface Settings {
@@ -35,19 +92,26 @@ export interface InitialData {
   root: string;
   agents: WorkspaceItem[];
   skills: WorkspaceItem[];
+  commands: WorkspaceItem[];
   profiles: Record<string, Profile>;
   catalogAgents: CatalogItem[];
   catalogSkills: CatalogItem[];
+  catalogCommands: CatalogItem[];
   globalRoot: string;
   settings: Settings;
   vscodeThemeKind: 'dark' | 'light';
   extensionVersion: string;
+  lastApplied?: string;
+  claudeSettings: ClaudeSettings;
+  memoryFiles: MemoryFile[];
+  mcpServers: McpServer[];
+  uiState?: Record<string, unknown>;
 }
 
 export interface RegistryItem {
   name: string;
   file: string;
-  itemType: 'agents' | 'skills' | 'commands';
+  itemType: ItemType;
   status: 'updatable' | 'custom';
 }
 
@@ -55,17 +119,15 @@ export interface RegistryItem {
 export type WebviewMessage =
   | { command: 'ready' }
   | { command: 'setTab'; tab: string }
-  | { command: 'toggle'; type: 'agents' | 'skills'; file: string; wasActive: boolean }
-  | { command: 'enableAll'; type: 'agents' | 'skills' }
-  | { command: 'disableAll'; type: 'agents' | 'skills' }
-  | { command: 'addFromGlobal'; itemType: 'agents' | 'skills'; file: string }
-  | { command: 'pushToGlobal'; itemType: 'agents' | 'skills'; file: string }
+  | { command: 'toggle'; type: ItemType; file: string; wasActive: boolean }
+  | { command: 'addFromGlobal'; itemType: ItemType; file: string }
+  | { command: 'pushToGlobal'; itemType: ItemType; file: string }
   | { command: 'saveProfile'; name: string }
-  | { command: 'applyProfile'; name: string; silent?: boolean }
+  | { command: 'applyProfile'; name: string; silent?: boolean; skipRestorePoint?: boolean }
   | { command: 'deleteProfile'; name: string }
   | { command: 'renameProfile'; from: string; to: string }
   | { command: 'reorderProfiles'; order: string[] }
-  | { command: 'updateProfileItems'; name: string; agents: string[]; skills: string[] }
+  | { command: 'updateProfileItems'; name: string; agents: string[]; skills: string[]; commands: string[] }
   | { command: 'duplicateProfile'; from: string; to: string }
   | { command: 'updateSettings'; settings: Partial<Settings> }
   | { command: 'revealCatalog' }
@@ -74,7 +136,26 @@ export type WebviewMessage =
   | { command: 'runUpdate' }
   | { command: 'refresh' }
   | { command: 'openExternal'; url: string }
-  | { command: 'bulkToggle'; items: Array<{ type: 'agents' | 'skills'; file: string; wasActive: boolean }> };
+  | { command: 'bulkToggle'; items: Array<{ type: ItemType; file: string; wasActive: boolean }> }
+  | { command: 'updateProfileDescription'; name: string; description: string }
+  | { command: 'previewApplyProfile'; name: string }
+  | { command: 'exportProfile'; name: string }
+  | { command: 'importProfileRequest' }
+  | { command: 'importProfileConfirm'; name: string; profile: { agents: string[]; skills: string[]; commands: string[]; description: string }; missing: PendingItems }
+  | { command: 'bulkAddFromGlobal'; items: Array<{ itemType: ItemType; file: string }> }
+  | { command: 'clearRestorePoint' }
+  | { command: 'updateClaudeSetting'; key: string; value: string | boolean | null }
+  | { command: 'openMemoryFile'; path: string }
+  | { command: 'addEnvVar'; key: string; value: string }
+  | { command: 'removeEnvVar'; key: string }
+  | { command: 'addPermissionRule'; ruleType: 'allow' | 'deny' | 'ask'; value: string }
+  | { command: 'removePermissionRule'; ruleType: 'allow' | 'deny' | 'ask'; value: string }
+  | { command: 'pickAndAddDirectory' }
+  | { command: 'removeDirectory'; path: string }
+  | { command: 'toggleHook'; event: string; groupIndex: number; hookIndex: number }
+  | { command: 'setSandboxEnabled'; enabled: boolean }
+  | { command: 'toggleMcpServer'; name: string }
+  | { command: 'setUiState'; key: string; value: unknown };
 
 // ─── Inbound (extension → webview) ───────────────────────────────────────────
 export type ExtensionMessage =
@@ -85,4 +166,6 @@ export type ExtensionMessage =
   | { command: 'updateStarted' }
   | { command: 'updateDone'; result: { updated: string[]; skipped: string[]; failed: string[] } }
   | { command: 'testRegistryResult'; ok: boolean; status?: number; error?: string }
-  | { command: 'notify'; level: 'info' | 'warn' | 'error'; text: string };
+  | { command: 'notify'; level: 'info' | 'warn' | 'error'; text: string }
+  | { command: 'applyProfilePreview'; name: string; willActivate: PendingItems; willDeactivate: PendingItems }
+  | { command: 'profileImportPreview'; originalName: string; profile: { agents: string[]; skills: string[]; commands: string[]; description: string }; found: PendingItems; missing: PendingItems };

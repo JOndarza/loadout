@@ -1,6 +1,7 @@
 <div class="cm-profiles">
   <div class="cm-profiles-create">
     <input
+      #nameInput
       type="text"
       class="cm-profiles-input"
       [ngModel]="newName()"
@@ -10,10 +11,16 @@
       (keydown.enter)="save()"
       aria-label="New loadout name"
     />
-    <cm-button variant="primary" size="md" (click)="save()">
-      Save loadout
-    </cm-button>
+    <cm-button variant="primary" size="md" (click)="save()">Save loadout</cm-button>
+    <cm-button variant="ghost" size="md" (click)="startImport()" title="Import profile from file">Import</cm-button>
   </div>
+
+  @if (state.hasRestorePoint()) {
+    <div class="cm-profiles-restore">
+      <cm-button variant="ghost" size="sm" (click)="restore()">↩ Restore previous state</cm-button>
+      <cm-button variant="ghost" size="sm" (click)="clearRestorePoint()" title="Dismiss restore point">✕</cm-button>
+    </div>
+  }
 
   @if (entries().length === 0) {
     <cm-empty
@@ -24,11 +31,13 @@
   } @else {
     <ul class="cm-profiles-list" role="list">
       @for (p of entries(); track p.name; let i = $index) {
+        @if (!deletePending().has(p.name)) {
         <li
           [draggable]="renamingFrom() !== p.name && editingName() !== p.name"
           (dragstart)="onDragStart(i)"
           (dragover)="onDragOver($any($event))"
           (drop)="onDrop(i)"
+          (contextmenu)="onCardContextMenu($event, p)"
         >
           <cm-card [active]="isActive(p.name)" variant="profile">
             <span class="cm-profiles-drag" aria-hidden="true">⋮⋮</span>
@@ -57,28 +66,83 @@
                   @if (isActive(p.name)) {
                     <span class="cm-profiles-active-badge">● Active</span>
                   }
+                  @if (pendingCount(p) > 0) {
+                    <span class="cm-profiles-pending-badge" [title]="pendingCount(p) + ' items not yet in this workspace'">
+                      ⚠ {{ pendingCount(p) }} pending
+                    </span>
+                    <cm-button variant="ghost" size="sm" (click)="adoptPending(p)" title="Adopt all pending items from catalog">Adopt</cm-button>
+                  }
                 </div>
               }
-              <div class="cm-profiles-meta">
+
+              @if (editingDescriptionFor() === p.name) {
+                <input
+                  type="text"
+                  class="cm-profiles-desc-input"
+                  [ngModel]="descriptionDraft()"
+                  (ngModelChange)="descriptionDraft.set($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  placeholder="Add a description…"
+                  (keydown.enter)="saveDescription(p.name)"
+                  (keydown.escape)="editingDescriptionFor.set(null)"
+                  (blur)="saveDescription(p.name)"
+                  aria-label="Profile description"
+                  autofocus
+                />
+              } @else {
+                <div
+                  class="cm-profiles-desc"
+                  [class.cm-profiles-desc--empty]="!p.description"
+                  (click)="startEditDescription(p.name, p.description)"
+                  title="Click to edit description"
+                >
+                  {{ p.description || 'Add a description…' }}
+                </div>
+              }
+
+              <div class="cm-profiles-counts">
                 <strong>{{ p.agents.length }}</strong> agents ·
                 <strong>{{ p.skills.length }}</strong> skills ·
+                <strong>{{ p.commands.length }}</strong> commands
+              </div>
+              <div class="cm-profiles-hover-meta">
                 {{ formatDate(p.createdAt) }}
+                @if (p.appliedCount > 0) {
+                  · applied <strong>{{ p.appliedCount }}×</strong>
+                }
               </div>
             </div>
 
             <div class="cm-profiles-actions">
-              <cm-button variant="ghost" size="sm" (click)="startEdit(p)" title="Edit items">✎</cm-button>
-              <cm-button variant="ghost" size="sm" (click)="duplicate(p.name)" title="Duplicate">⎘</cm-button>
               <cm-button
                 variant="gold"
                 size="sm"
-                (click)="apply(p.name)"
+                (click)="requestApply(p.name)"
                 [disabled]="isActive(p.name)"
-                title="Apply"
+                title="Apply loadout"
               >
                 {{ isActive(p.name) ? 'Active' : 'Apply' }}
               </cm-button>
-              <cm-button variant="danger" size="sm" (click)="remove(p.name)" title="Delete">✕</cm-button>
+              <div class="cm-card-menu-wrap">
+                <button
+                  type="button"
+                  class="cm-card-menu-trigger"
+                  [class.is-open]="openMenuFor() === p.name"
+                  [attr.aria-label]="'More actions for ' + p.name"
+                  [attr.aria-expanded]="openMenuFor() === p.name"
+                  (click)="toggleMenu(p.name, $event)"
+                >⋯</button>
+                @if (openMenuFor() === p.name) {
+                  <div class="cm-card-menu" role="menu">
+                    <button type="button" class="cm-card-menu-item" role="menuitem" (click)="startEdit(p)">✎ Edit items</button>
+                    <button type="button" class="cm-card-menu-item" role="menuitem" (click)="startRename(p.name)">✏ Rename</button>
+                    <button type="button" class="cm-card-menu-item" role="menuitem" (click)="duplicate(p.name)">⎘ Duplicate</button>
+                    <button type="button" class="cm-card-menu-item" role="menuitem" (click)="exportProfile(p.name)">↑ Export</button>
+                    <div class="cm-card-menu-divider" role="separator"></div>
+                    <button type="button" class="cm-card-menu-item" role="menuitem" data-variant="danger" (click)="remove(p.name)">✕ Delete</button>
+                  </div>
+                }
+              </div>
             </div>
           </cm-card>
 
@@ -114,6 +178,23 @@
                   }
                 </div>
               </div>
+              @if (workspace.commands().length > 0) {
+                <div class="cm-profiles-edit-section">
+                  <div class="cm-profiles-edit-label">Commands</div>
+                  <div class="cm-profiles-chips">
+                    @for (c of workspace.commands(); track c.file) {
+                      <button
+                        type="button"
+                        class="cm-profiles-chip cm-profiles-chip--command"
+                        [class.is-on]="isEditCommandOn(c.file)"
+                        (click)="toggleEditCommand(c.file)"
+                      >
+                        {{ c.name }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
               <div class="cm-profiles-edit-actions">
                 <cm-button variant="ghost" size="sm" (click)="cancelEdit()">Cancel</cm-button>
                 <cm-button variant="primary" size="sm" (click)="commitEdit()">Save changes</cm-button>
@@ -121,7 +202,25 @@
             </div>
           }
         </li>
+        } <!-- @if !deletePending -->
       }
     </ul>
   }
 </div>
+
+@if (pendingApply()) {
+  <cm-apply-confirm
+    [profileName]="pendingApply()!.name"
+    [diff]="pendingApply()!.diff"
+    (confirm)="confirmApply()"
+    (cancel)="cancelApply()"
+  />
+}
+
+@if (importPreview()) {
+  <cm-import-profile
+    [preview]="importPreview()!"
+    (confirm)="confirmImport($event)"
+    (cancel)="cancelImport()"
+  />
+}

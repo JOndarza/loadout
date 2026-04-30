@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CatalogState } from '../../core/state/catalog.state';
-import { WorkspaceState } from '../../core/state/workspace.state';
-import { VsCodeBridgeService } from '../../core/vscode-bridge.service';
+import { CatalogState } from '@state/catalog.state';
+import { WorkspaceState } from '@state/workspace.state';
+import { TabFiltersState, type CatalogFilter } from '@state/tab-filters.state';
+import { CatalogBloc } from './catalog.bloc';
+import { SearchService } from '@core/search.service';
+import { ContextMenuService } from '@shared/overlays/context-menu.service';
 import {
   CmButtonComponent,
   CmCardComponent,
@@ -10,17 +12,17 @@ import {
   CmSyncPillComponent,
   CmTokenBarComponent,
   CopyToClipboardDirective,
-} from '../../shared/primitives';
-import type { CatalogItem, RegistryItem, WorkspaceItem } from '../../core/messages';
+} from '@shared/primitives';
+import type { CatalogItem, ItemType, WorkspaceItem } from '@core/messages';
 
-type FilterChip = 'all' | 'agents' | 'skills' | 'updated' | 'local-only';
+type FilterChip = CatalogFilter;
 
 interface CatalogRow extends CatalogItem {
-  type: 'agents' | 'skills';
+  type: ItemType;
 }
 
 interface LocalOnlyRow extends WorkspaceItem {
-  type: 'agents' | 'skills';
+  type: ItemType;
 }
 
 @Component({
@@ -40,17 +42,18 @@ interface LocalOnlyRow extends WorkspaceItem {
 export class CatalogComponent {
   protected readonly state = inject(CatalogState);
   protected readonly workspace = inject(WorkspaceState);
-  private readonly bridge = inject(VsCodeBridgeService);
+  protected readonly filters = inject(TabFiltersState);
+  private readonly bloc = inject(CatalogBloc);
+  private readonly search = inject(SearchService);
+  private readonly contextMenu = inject(ContextMenuService);
 
   readonly searchQuery = input<string>('');
-
-  protected readonly filter = signal<FilterChip>('all');
   protected readonly registryOpen = signal(false);
-  protected readonly registryItems = signal<RegistryItem[]>([]);
-  protected readonly registryLoading = signal(false);
-  protected readonly registryError = signal<string | null>(null);
-  protected readonly updateRunning = signal(false);
-  protected readonly updateResult = signal<{ updated: string[]; skipped: string[]; failed: string[] } | null>(null);
+  protected readonly registryItems = this.bloc.registryItems;
+  protected readonly registryLoading = this.bloc.registryLoading;
+  protected readonly registryError = this.bloc.registryError;
+  protected readonly updateRunning = this.bloc.updateRunning;
+  protected readonly updateResult = this.bloc.updateResult;
   protected readonly selected = signal<Set<string>>(new Set());
 
   protected readonly catalogRows = computed<CatalogRow[]>(() =>
@@ -64,70 +67,61 @@ export class CatalogComponent {
   protected readonly localOnlyRows = computed<LocalOnlyRow[]>(() => {
     const catalogFiles = new Set(this.state.all().map((i) => i.file));
     const local: LocalOnlyRow[] = [
-      ...this.workspace.agents().map((a) => ({ ...a, type: 'agents' as const })),
-      ...this.workspace.skills().map((s) => ({ ...s, type: 'skills' as const })),
+      ...this.workspace.agents().map((a)   => ({ ...a, type: 'agents'   as const })),
+      ...this.workspace.skills().map((s)   => ({ ...s, type: 'skills'   as const })),
+      ...this.workspace.commands().map((c) => ({ ...c, type: 'commands' as const })),
     ];
     return local.filter((i) => !catalogFiles.has(i.file));
   });
 
   protected readonly visibleCatalog = computed<CatalogRow[]>(() => {
-    const f = this.filter();
-    const q = this.searchQuery().toLowerCase().trim();
+    const f = this.filters.catalog().filter;
+    const { fuzzy } = this.search.parseQuery(this.searchQuery().trim());
     let rows = this.catalogRows();
 
-    if (f === 'agents') rows = rows.filter((r) => r.type === 'agents');
-    else if (f === 'skills') rows = rows.filter((r) => r.type === 'skills');
-    else if (f === 'updated') rows = rows.filter((r) => r.syncStatus === 'sharedUpdated');
-    else if (f === 'local-only') return [];
+    switch (f) {
+      case 'agents':
+      case 'skills':
+      case 'commands':
+        rows = rows.filter((r) => r.type === f);
+        break;
+      case 'updated':
+        rows = rows.filter((r) => r.syncStatus === 'sharedUpdated');
+        break;
+      case 'local-only':
+        return [];
+    }
 
-    if (q) {
-      rows = rows.filter((r) =>
-        `${r.name} ${r.description} ${r.file}`.toLowerCase().includes(q),
-      );
+    if (fuzzy) {
+      rows = this.search.fuzzyFilter(rows, (r) => `${r.name} ${r.description} ${r.file}`, fuzzy);
     }
     return rows;
   });
 
   protected readonly visibleLocalOnly = computed<LocalOnlyRow[]>(() => {
-    if (this.filter() !== 'local-only') return [];
-    const q = this.searchQuery().toLowerCase().trim();
+    if (this.filters.catalog().filter !== 'local-only') return [];
+    const { fuzzy } = this.search.parseQuery(this.searchQuery().trim());
     let rows = this.localOnlyRows();
-    if (q) {
-      rows = rows.filter((r) =>
-        `${r.name} ${r.description} ${r.file}`.toLowerCase().includes(q),
-      );
+    if (fuzzy) {
+      rows = this.search.fuzzyFilter(rows, (r) => `${r.name} ${r.description} ${r.file}`, fuzzy);
     }
     return rows;
   });
 
   protected readonly counts = computed(() => {
     const rows = this.catalogRows();
-    let agents = 0, skills = 0, updated = 0;
+    let agents = 0, skills = 0, commands = 0, updated = 0;
     for (const r of rows) {
-      if (r.type === 'agents') agents++;
-      else if (r.type === 'skills') skills++;
+      if (r.type === 'agents')        agents++;
+      else if (r.type === 'skills')   skills++;
+      else if (r.type === 'commands') commands++;
       if (r.syncStatus === 'sharedUpdated') updated++;
     }
-    return { all: rows.length, agents, skills, updated, localOnly: this.localOnlyRows().length };
+    return { all: rows.length, agents, skills, commands, updated, localOnly: this.localOnlyRows().length };
   });
 
-  constructor() {
-    this.bridge.messages$.pipe(takeUntilDestroyed()).subscribe((m) => {
-      if (m.command === 'registryStatus') {
-        this.registryLoading.set(false);
-        this.registryError.set(m.error ?? null);
-        this.registryItems.set(m.items ?? []);
-      } else if (m.command === 'updateStarted') {
-        this.updateRunning.set(true);
-      } else if (m.command === 'updateDone') {
-        this.updateRunning.set(false);
-        this.updateResult.set(m.result);
-      }
-    });
-  }
-
   protected setFilter(f: FilterChip): void {
-    this.filter.set(f);
+    this.filters.patch('catalog', { filter: f });
     this.selected.set(new Set());
   }
 
@@ -136,11 +130,11 @@ export class CatalogComponent {
   }
 
   protected pull(item: CatalogRow | LocalOnlyRow): void {
-    this.bridge.send({ command: 'addFromGlobal', itemType: item.type, file: item.file });
+    this.bloc.addFromGlobal(item.type, item.file);
   }
 
   protected pushLocal(item: CatalogRow | LocalOnlyRow): void {
-    this.bridge.send({ command: 'pushToGlobal', itemType: item.type, file: item.file });
+    this.bloc.pushToGlobal(item.type, item.file);
   }
 
   protected toggleSelect(item: CatalogRow): void {
@@ -156,10 +150,11 @@ export class CatalogComponent {
   }
 
   protected bulkAdopt(): void {
-    const items = this.visibleCatalog().filter((i) => this.isSelected(i) && !i.inProject);
-    for (const it of items) {
-      this.bridge.send({ command: 'addFromGlobal', itemType: it.type, file: it.file });
-    }
+    const items = this.visibleCatalog()
+      .filter((i) => this.isSelected(i) && !i.inProject)
+      .map((i) => ({ itemType: i.type, file: i.file }));
+    if (!items.length) return;
+    this.bloc.bulkAddFromGlobal(items);
     this.selected.set(new Set());
   }
 
@@ -172,14 +167,24 @@ export class CatalogComponent {
   }
 
   protected checkRegistry(): void {
-    this.registryLoading.set(true);
-    this.registryError.set(null);
-    this.registryItems.set([]);
-    this.bridge.send({ command: 'checkRegistry' });
+    this.bloc.checkRegistry();
   }
 
   protected runUpdate(): void {
-    this.updateResult.set(null);
-    this.bridge.send({ command: 'runUpdate' });
+    this.bloc.runUpdate();
+  }
+
+  protected onItemContextMenu(e: MouseEvent, item: CatalogRow): void {
+    e.preventDefault();
+    this.contextMenu.open({
+      x: e.clientX,
+      y: e.clientY,
+      items: [
+        ...(!item.inProject
+          ? [{ label: '↓ Adopt', action: () => this.pull(item) }]
+          : []),
+        { label: '⎘ Copy name', action: () => navigator.clipboard.writeText(item.name) },
+      ],
+    });
   }
 }

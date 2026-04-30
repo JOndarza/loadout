@@ -14,6 +14,144 @@ cm-workspace {
   gap: var(--sp-3);
 }
 
+// ─── Onboarding checklist ────────────────────────────────────────────────────
+.cm-onboarding {
+  padding: var(--sp-4);
+  border-radius: var(--r-lg);
+  background: rgba(var(--gold-rgb), 0.04);
+  outline: 1px dashed rgba(var(--gold-rgb), 0.25);
+  outline-offset: -1px;
+}
+
+.cm-onboarding-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+
+.cm-onboarding-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.cm-onboarding-dismiss {
+  @include button-reset;
+  @include focus-ring;
+  font-size: 11px;
+  color: var(--text-dim);
+  padding: 2px var(--sp-1);
+  border-radius: var(--r-sm);
+  transition: color var(--t-fast);
+
+  &:hover { color: var(--text-muted); }
+}
+
+.cm-onboarding-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.cm-onboarding-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  opacity: 1;
+  transition: opacity var(--t-normal);
+
+  &.is-done {
+    opacity: 0.45;
+  }
+}
+
+.cm-onboarding-check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--r-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gold-on);
+  background: rgba(var(--gold-rgb), 0.12);
+  box-shadow: var(--ring-gold);
+  transition: background var(--t-fast);
+
+  .is-done & {
+    background: var(--gold);
+  }
+}
+
+.cm-onboarding-step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: var(--tracking-tight);
+  }
+}
+
+.cm-onboarding-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+// ─── Selection checkbox affordance ───────────────────────────────────────────
+.cm-ws-checkbox {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gold-on);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: var(--ring-soft);
+  opacity: 0;
+  transition: opacity var(--t-fast), background var(--t-fast);
+
+  .cm-card:hover &,
+  &.is-checked {
+    opacity: 1;
+  }
+
+  &.is-checked {
+    background: var(--gold);
+    box-shadow: var(--ring-gold);
+  }
+}
+
+// ─── Search match highlight ───────────────────────────────────────────────────
+mark.cm-search-match {
+  background: rgba(var(--gold-rgb), 0.25);
+  color: var(--gold-bright);
+  border-radius: 2px;
+  padding: 0 1px;
+  font-style: normal;
+}
+
+[data-theme='light'] mark.cm-search-match {
+  background: rgba(var(--gold-rgb), 0.3);
+  color: var(--gold);
+}
+
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
 .cm-ws-toolbar {
   display: flex;
@@ -101,6 +239,38 @@ cm-workspace {
     background: rgba(0, 227, 253, 0.08);
     color: var(--secondary);
     @include ring(rgba(0, 227, 253, 0.18));
+  }
+
+  @include at-xs { display: none; }
+}
+
+.cm-ws-memory {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 8px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--r-sm);
+  background: rgba(167, 139, 250, 0.12);
+  color: rgb(167, 139, 250);
+  @include ring(rgba(167, 139, 250, 0.3));
+  align-self: flex-start;
+  margin-top: 8px;
+
+  &[data-scope='project'] {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+    @include ring(rgba(var(--primary-rgb), 0.25));
+  }
+
+  &[data-scope='local'] {
+    background: rgba(var(--gold-rgb), 0.1);
+    color: var(--gold);
+    @include ring(rgba(var(--gold-rgb), 0.25));
   }
 
   @include at-xs { display: none; }

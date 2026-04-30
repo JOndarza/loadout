@@ -1,0 +1,33 @@
+# Bug File Template
+
+```markdown
+# {ID} — {Title}
+
+## Description
+[What's happening vs what should happen]
+
+## Steps to Reproduce
+1. Step 1
+2. Step 2
+
+## Expected Behavior
+[What should happen]
+
+## Actual Behavior
+[What happens instead]
+
+## Root Cause
+[Fill after investigation]
+
+## Fix
+[Fill after resolution — what was changed and why]
+
+## Status
+- **Severity**: ASAP / Critical / High / Medium / Low
+- **Status**: Open / In progress / In review / Blocked / Resolved / Cannot reproduce / Duplicate / Won't fix
+- **Created**: YYYY-MM-DD
+- **Resolved**: YYYY-MM-DD (fill when done)
+- **Commit**: [hash] (fill when done)
+- **Blocked reason**: (fill if Blocked)
+- **Duplicate of**: (fill if Duplicate — link to original)
+```

@@ -10,11 +10,14 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ProfilesState } from '../../core/state/profiles.state';
-import { WorkspaceState } from '../../core/state/workspace.state';
-import { CatalogState } from '../../core/state/catalog.state';
-import { ShortcutsService } from '../../core/shortcuts.service';
-import { VsCodeBridgeService } from '../../core/vscode-bridge.service';
+import { ProfilesState } from '@state/profiles.state';
+import { WorkspaceState } from '@state/workspace.state';
+import { CatalogState } from '@state/catalog.state';
+import { ShortcutsService } from '@core/shortcuts.service';
+import { DataSyncService } from '@core/data-sync.service';
+import { WorkspaceBloc } from '@features/workspace/workspace.bloc';
+import { ProfilesBloc } from '@features/profiles/profiles.bloc';
+import { CatalogBloc } from '@features/catalog/catalog.bloc';
 
 interface PaletteCommand {
   key: string;
@@ -36,7 +39,10 @@ export class CommandPaletteComponent {
   private readonly workspace = inject(WorkspaceState);
   private readonly profiles = inject(ProfilesState);
   private readonly catalog = inject(CatalogState);
-  private readonly bridge = inject(VsCodeBridgeService);
+  private readonly workspaceBloc = inject(WorkspaceBloc);
+  private readonly profilesBloc = inject(ProfilesBloc);
+  private readonly catalogBloc = inject(CatalogBloc);
+  private readonly sync = inject(DataSyncService);
 
   protected readonly open = this.shortcuts.paletteOpen;
   protected readonly query = signal('');
@@ -54,7 +60,7 @@ export class CommandPaletteComponent {
         label: `${a.active ? 'Disable' : 'Enable'} ${a.name}`,
         hint: `agent · ${a.tokens} tok`,
         category: 'toggle',
-        run: () => this.bridge.send({ command: 'toggle', type: 'agents', file: a.file, wasActive: a.active }),
+        run: () => this.workspaceBloc.toggle('agents', a.file, a.active),
       });
     }
     for (const s of this.workspace.skills()) {
@@ -63,7 +69,16 @@ export class CommandPaletteComponent {
         label: `${s.active ? 'Disable' : 'Enable'} ${s.name}`,
         hint: `skill · ${s.tokens} tok`,
         category: 'toggle',
-        run: () => this.bridge.send({ command: 'toggle', type: 'skills', file: s.file, wasActive: s.active }),
+        run: () => this.workspaceBloc.toggle('skills', s.file, s.active),
+      });
+    }
+    for (const c of this.workspace.commands()) {
+      cmds.push({
+        key: `toggle-command-${c.file}`,
+        label: `${c.active ? 'Disable' : 'Enable'} ${c.name}`,
+        hint: `command · ${c.tokens} tok`,
+        category: 'toggle',
+        run: () => this.workspaceBloc.toggle('commands', c.file, c.active),
       });
     }
 
@@ -72,9 +87,9 @@ export class CommandPaletteComponent {
       cmds.push({
         key: `apply-${p.name}`,
         label: `Apply loadout: ${p.name}`,
-        hint: `${p.agents.length}a · ${p.skills.length}s`,
+        hint: `${p.agents.length}a · ${p.skills.length}s · ${p.commands.length}c`,
         category: 'profile',
-        run: () => this.bridge.send({ command: 'applyProfile', name: p.name, silent: true }),
+        run: () => this.profilesBloc.applyProfile(p.name, true, true),
       });
     }
 
@@ -83,9 +98,9 @@ export class CommandPaletteComponent {
       cmds.push({
         key: `adopt-${c.type}-${c.file}`,
         label: `Adopt ${c.name}`,
-        hint: `${c.type === 'agents' ? 'agent' : 'skill'} · catalog`,
+        hint: `${{ agents: 'agent', skills: 'skill', commands: 'command' }[c.type]} · catalog`,
         category: 'catalog',
-        run: () => this.bridge.send({ command: 'addFromGlobal', itemType: c.type, file: c.file }),
+        run: () => this.catalogBloc.addFromGlobal(c.type, c.file),
       });
     }
 
@@ -95,7 +110,7 @@ export class CommandPaletteComponent {
       label: 'Refresh',
       hint: 'reload data from disk',
       category: 'system',
-      run: () => this.bridge.send({ command: 'refresh' }),
+      run: () => this.sync.refresh(),
     });
 
     return cmds;

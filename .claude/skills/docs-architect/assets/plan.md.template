@@ -1,0 +1,27 @@
+# Plan File Template
+
+Plans live in `docs/plans/`. Used for multi-step implementation tasks before touching code.
+
+```markdown
+# {Title}
+
+**Date**: YYYY-MM-DD
+**Priority**: ASAP / High / Medium / Low
+**Status**: Draft / In review / Approved / In progress / Blocked / On hold / Completed / Rejected
+
+## Goal
+[What we're trying to achieve]
+
+## Approach
+[High-level strategy]
+
+## Steps
+1. [ ] Step 1
+2. [ ] Step 2
+
+## Risks
+- [Risk 1 and mitigation]
+
+## Affected Files
+- [file paths]
+```

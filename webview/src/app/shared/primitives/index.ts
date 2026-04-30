@@ -6,3 +6,4 @@ export { CmSegmentedComponent, type SegmentedOption } from './cm-segmented.compo
 export { CmSyncPillComponent } from './cm-sync-pill.component';
 export { CmTokenBarComponent } from './cm-token-bar.component';
 export { CmToggleComponent } from './cm-toggle.component';
+export { HighlightMatchPipe, type MatchSegment } from './highlight-match.pipe';

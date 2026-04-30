@@ -195,6 +195,83 @@ cm-settings {
   &.is-fail { color: var(--error); }
 }
 
+// ─── Claude settings additions ───────────────────────────────────────────────
+
+.cm-set-hint--padded {
+  padding: var(--sp-2) 0;
+}
+
+.cm-set-input--sm {
+  width: auto;
+  min-width: 0;
+  flex: 1;
+}
+
+.cm-set-control--inline {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+
+.cm-set-env-key {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-top: 6px;
+  word-break: break-all;
+}
+
+.cm-set-env-mask {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+}
+
+.cm-set-row--add-env {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+  padding: var(--sp-3) 0;
+  grid-column: 1 / -1;
+}
+
+.cm-set-ctx-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.cm-set-ctx-scope {
+  flex-shrink: 0;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-full);
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.06);
+
+  &[data-scope='user']    { color: var(--primary); background: rgba(var(--primary-rgb), 0.1); }
+  &[data-scope='project'] { color: var(--gold);    background: var(--gold-subtle); }
+  &[data-scope='local']   { color: var(--secondary); background: rgba(0, 227, 253, 0.08); }
+  &[data-scope='rules']   { color: rgb(167, 139, 250); background: rgba(167, 139, 250, 0.1); }
+}
+
+[data-theme='light'] .cm-set-ctx-scope {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.cm-set-ctx-path {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  @include truncate-1;
+  flex: 1;
+  min-width: 0;
+}
+
 // ─── Shortcuts ───────────────────────────────────────────────────────────────
 .cm-set-shortcuts {
   list-style: none;

@@ -1,19 +1,23 @@
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CatalogState } from './state/catalog.state';
+import { ClaudeSettingsState } from './state/claude-settings.state';
 import { ProfilesState } from './state/profiles.state';
 import { SettingsState } from './state/settings.state';
 import { WorkspaceState } from './state/workspace.state';
+import { UiStateService } from './state/ui-state.service';
 import type { InitialData } from './messages';
 import { VsCodeBridgeService } from './vscode-bridge.service';
 
 @Injectable({ providedIn: 'root' })
 export class DataSyncService {
   private readonly bridge = inject(VsCodeBridgeService);
-  private readonly workspace = inject(WorkspaceState);
-  private readonly profiles = inject(ProfilesState);
-  private readonly catalog = inject(CatalogState);
-  private readonly settings = inject(SettingsState);
+  private readonly workspace      = inject(WorkspaceState);
+  private readonly profiles       = inject(ProfilesState);
+  private readonly catalog        = inject(CatalogState);
+  private readonly settings       = inject(SettingsState);
+  private readonly claudeSettings = inject(ClaudeSettingsState);
+  private readonly uiStateSvc     = inject(UiStateService);
 
   private readonly _root = signal<string>('');
   private readonly _version = signal<string>('');
@@ -24,6 +28,10 @@ export class DataSyncService {
   readonly ready = this._ready.asReadonly();
 
   private readonly destroyRef = inject(DestroyRef);
+
+  refresh(): void {
+    this.bridge.send({ command: 'refresh' });
+  }
 
   init(): void {
     this.bridge.messages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((msg) => {
@@ -38,21 +46,28 @@ export class DataSyncService {
   private applyData(data: InitialData): void {
     this._root.set(data.root);
     this._version.set(data.extensionVersion);
-    this.workspace.setAll(data.agents, data.skills);
+    this.workspace.setAll(data.agents, data.skills, data.commands ?? []);
     this.profiles.setAll(data.profiles);
-    this.catalog.setAll(data.catalogAgents, data.catalogSkills, data.globalRoot);
+    this.catalog.setAll(data.catalogAgents, data.catalogSkills, data.catalogCommands ?? [], data.globalRoot);
     this.settings.setAll(data.settings);
+    this.claudeSettings.setAll(data.claudeSettings ?? {}, data.memoryFiles ?? [], data.mcpServers ?? []);
+    this.uiStateSvc.setAll(data.uiState ?? {});
 
     // Resolve active profile using Set comparison (handles filenames with commas, stable order)
-    const activeAgents = new Set(data.agents.filter((a) => a.active).map((a) => a.file));
-    const activeSkills = new Set(data.skills.filter((s) => s.active).map((s) => s.file));
+    const activeAgents   = new Set(data.agents.filter((a) => a.active).map((a) => a.file));
+    const activeSkills   = new Set(data.skills.filter((s) => s.active).map((s) => s.file));
+    const activeCommands = new Set((data.commands ?? []).filter((c) => c.active).map((c) => c.file));
     const sorted = Object.entries(data.profiles).sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
     const found = sorted.find(
       ([, p]) =>
-        this.setsEqual(activeAgents, new Set(p.agents ?? [])) &&
-        this.setsEqual(activeSkills, new Set(p.skills ?? [])),
+        this.setsEqual(activeAgents,   new Set(p.agents   ?? [])) &&
+        this.setsEqual(activeSkills,   new Set(p.skills   ?? [])) &&
+        this.setsEqual(activeCommands, new Set(p.commands ?? [])),
     );
-    this.profiles.setActiveName(found?.[0] ?? null);
+    const lastAppliedFallback = data.lastApplied && data.profiles[data.lastApplied]
+      ? data.lastApplied
+      : null;
+    this.profiles.setActiveName(found?.[0] ?? lastAppliedFallback);
   }
 
   private setsEqual<T>(a: Set<T>, b: Set<T>): boolean {

@@ -7,8 +7,10 @@ webview/dist/
 webview/coverage/
 webview/storybook-static/
 
-.claude/
+.claire/
+.claude/*
 webview-dist/
+
 
 # OS
 .DS_Store
@@ -21,3 +23,10 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Excludes — un-ignore specific .claude subdirectories
+!.claude/rules
+!.claude/skills
+.claude/skills/*
+!.claude/skills/docs-architect
+!.claude/skills/loadout-system-design

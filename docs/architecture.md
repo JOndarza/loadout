@@ -40,7 +40,7 @@ Loadout is a VSCode extension with two separate runtime processes:
 | `src/constants.js` | `DEFAULT_REGISTRY_URL` |
 
 **Data layer**: `data.js`
-- All reads/writes to `.claude/agents/`, `.claude/skills/`, `profiles.json`, `ui-state.json`, and catalog
+- All reads/writes to `.claude/agents/`, `.claude/skills/`, `.claude/commands/`, `profiles.json`, `ui-state.json`, and catalog
 - `toggleItem()` — moves files between active dir and managed store in `context.storageUri`
 - `getCatalogItems()` — lists global catalog items with hash-based sync status
 - `pushToGlobal()` / `copyFromGlobal()` — catalog promotion/adoption flows
@@ -66,7 +66,7 @@ Loadout is a VSCode extension with two separate runtime processes:
 webview/src/app/
 ├── core/
 │   ├── state/
-│   │   ├── workspace.state.ts    # agents + skills toggle state
+│   │   ├── workspace.state.ts    # agents + skills + commands toggle state
 │   │   ├── profiles.state.ts     # profile list + apply/save
 │   │   ├── catalog.state.ts      # catalog items + sync status
 │   │   └── settings.state.ts     # density, theme, defaultTab, registryUrl
@@ -79,10 +79,10 @@ webview/src/app/
 ├── layout/
 │   └── shell/                    # ShellComponent — header + tabs + status strip
 ├── features/
-│   ├── workspace/                # Workspace tab: toggle agents/skills
-│   ├── profiles/                 # Profiles tab: save/apply/rename profiles
-│   ├── catalog/                  # Catalog tab: global catalog browsing
-│   └── settings/                 # Settings tab: density, theme, registry
+│   ├── workspace/                # workspace.component.ts + workspace.bloc.ts
+│   ├── profiles/                 # profiles.component.ts  + profiles.bloc.ts
+│   ├── catalog/                  # catalog.component.ts   + catalog.bloc.ts
+│   └── settings/                 # settings.component.ts  + settings.bloc.ts
 └── shared/
     ├── primitives/               # cm-card, cm-toggle, and other base components
     └── overlays/                 # modal, toast, command palette
@@ -110,12 +110,12 @@ Message types are defined in `messages.ts` and are the single source of truth.
 | Command | When |
 | --- | --- |
 | `ready` | Angular app bootstrapped |
-| `toggle` | User enables/disables a single agent or skill |
+| `toggle` | User enables/disables a single agent, skill, or command |
 | `bulkToggle` | User enables/disables multiple items at once |
 | `saveProfile` | User saves the current state as a named profile |
 | `applyProfile` | User applies a saved profile |
 | `renameProfile` / `deleteProfile` / `reorderProfiles` | Profile management |
-| `updateProfileItems` | Edits the agent/skill list of an existing profile |
+| `updateProfileItems` | Edits the agent/skill/command list of an existing profile |
 | `duplicateProfile` | Copies an existing profile under a new name |
 | `addFromGlobal` / `pushToGlobal` | Catalog adopt/promote |
 | `checkRegistry` | Fetches registry and compares against local items |
@@ -130,17 +130,26 @@ Message types are defined in `messages.ts` and are the single source of truth.
 
 ### State pattern
 
-All state lives in `core/state/*.state.ts` signal services. Components are dumb — they inject the state service and read its signals; they never mutate state directly. Mutations flow via `VsCodeBridgeService.send()`.
+All domain state lives in `core/state/*.state.ts` signal services. A **BLoC layer** (`*.bloc.ts`, one per feature) sits between components and the bridge: it owns all `bridge.send()` calls, inbound `messages$` subscriptions, and feature-local reactive state. Components are dumb — they read state signals and call BLoC methods; they never touch the bridge directly.
 
 ```
 VsCodeBridgeService.messages$ (Observable<ExtensionMessage>)
-       ↓ DataSyncService subscribes and routes
-WorkspaceStateService / ProfilesStateService / CatalogStateService / SettingsStateService
-       ↓ expose signals
-  Components (read-only, dumb)
-       ↓ user actions → VsCodeBridgeService.send()
+       ↓ DataSyncService subscribes → routes domain data
+WorkspaceState / ProfilesState / CatalogState / SettingsState  (signal services)
+       ↓ expose readonly signals
+  Components (read-only, dumb views)
+       ↓ user actions → *.bloc.ts methods
+  Feature BLoCs (WorkspaceBloc / ProfilesBloc / CatalogBloc / SettingsBloc)
+       ↓ bridge.send()  /  subscribe to messages$ for feature-specific inbound
   Extension host (mutates filesystem, replies with dataUpdate)
 ```
+
+**BLoC responsibilities:**
+- Action methods that wrap `bridge.send()` calls
+- Feature-local reactive state (`private signal<T>()` exposed via `.asReadonly()`)
+- Inbound message subscriptions (`takeUntilDestroyed()` in constructor)
+
+**Only these services may inject `VsCodeBridgeService` directly:** the four feature BLoCs, `DataSyncService` (domain routing + `refresh()`), and `ThemeService` (theme change subscription).
 
 ## Storage
 
@@ -148,12 +157,15 @@ WorkspaceStateService / ProfilesStateService / CatalogStateService / SettingsSta
 |---|---|
 | `.claude/agents/` (workspace) | Active agents for this workspace |
 | `.claude/skills/` (workspace) | Active skills for this workspace |
+| `.claude/commands/` (workspace) | Active commands for this workspace |
 | `context.storageUri/.claude-store/agents/` | Inactive agent files |
 | `context.storageUri/.claude-store/skills/` | Inactive skill files |
+| `context.storageUri/.claude-store/commands/` | Inactive command files |
 | `context.storageUri/profiles.json` | Named loadout snapshots |
 | `context.storageUri/ui-state.json` | Last active tab, density, etc. |
 | `~/.claude/agents/` (globalRoot) | Global catalog agents |
 | `~/.claude/skills/` (globalRoot) | Global catalog skills |
+| `~/.claude/commands/` (globalRoot) | Global catalog commands |
 | `~/.claude/.claude-hashes.json` | Hash store for sync detection |
 
 ## Security

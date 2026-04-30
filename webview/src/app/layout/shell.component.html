@@ -82,9 +82,20 @@
         <span class="cm-tab-label">Catalog</span>
         <span class="cm-tab-badge">{{ catalog.totalCount() }}</span>
       </button>
+      <button
+        type="button"
+        role="tab"
+        class="cm-tab"
+        [class.is-active]="activeTab() === 'config'"
+        [attr.aria-selected]="activeTab() === 'config'"
+        (click)="setTab('config')"
+      >
+        <span class="cm-tab-label">Config</span>
+      </button>
     </nav>
   </header>
 
+  @if (activeTab() === 'workspace') {
   <div class="cm-status-strip" role="status" aria-live="polite">
     <span class="cm-stat">
       <span class="cm-stat-dot cm-stat-dot--agents"></span>
@@ -102,9 +113,22 @@
     <span class="cm-stat-tokens">
       <span class="cm-stat-tokens-num">~{{ formatTokens(workspace.totalActiveTokens()) }}</span>
       <span class="cm-stat-tokens-unit">tok</span>
+      <div
+        class="cm-token-budget-bar"
+        role="progressbar"
+        [attr.aria-valuenow]="workspace.totalActiveTokens()"
+        aria-valuemax="200000"
+      >
+        <div
+          class="cm-token-budget-fill"
+          [style.width.%]="tokenBudgetPct()"
+          [style.background]="tokenBudgetColor()"
+        ></div>
+      </div>
       <span class="cm-stat-tokens-cost">~\${{ costEstimate() }}/req</span>
     </span>
   </div>
+  } <!-- @if workspace tab -->
 
   <main class="cm-content" [attr.data-density]="density()">
     @switch (activeTab()) {
@@ -116,6 +140,9 @@
       }
       @case ('catalog') {
         <cm-catalog [searchQuery]="searchQuery()" />
+      }
+      @case ('config') {
+        <cm-config />
       }
       @case ('settings') {
         <cm-settings />

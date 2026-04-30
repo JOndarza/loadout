@@ -60,6 +60,12 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+// ─── Bottom sheet ────────────────────────────────────────────────────────────
+@keyframes cm-sheet-up {
+  from { transform: translateY(100%); opacity: 0.5; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
 // ─── Token bar ───────────────────────────────────────────────────────────────
 @keyframes cm-tb-pulse {
   0%, 100% { box-shadow: 0 0 4px rgba(255, 110, 132, 0.3); }

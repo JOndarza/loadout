@@ -8,6 +8,9 @@
     "vscode": "^1.80.0"
   },
   "categories": ["Other"],
+  "capabilities": {
+    "untrustedWorkspaces": { "supported": true }
+  },
   "keywords": ["claude", "claude-code", "agents", "skills", "loadout", "profiles"],
   "activationEvents": [],
   "main": "./extension.js",
@@ -40,12 +43,27 @@
         "command": "loadout.refresh",
         "title": "Loadout: Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "loadout.adoptFile",
+        "title": "Loadout: Adopt into Workspace"
+      },
+      {
+        "command": "loadout.applyProfile",
+        "title": "Loadout: Apply Profile…"
       }
     ],
     "menus": {
       "commandPalette": [
         { "command": "loadout.openPanel" },
         { "command": "loadout.refresh" }
+      ],
+      "explorer/context": [
+        {
+          "command": "loadout.adoptFile",
+          "when": "resourceExtname == .md",
+          "group": "7_modification@100"
+        }
       ]
     },
     "keybindings": [
@@ -55,13 +73,50 @@
         "mac": "cmd+shift+alt+c"
       }
     ],
+    "walkthroughs": [
+      {
+        "id": "loadout.gettingStarted",
+        "title": "Get started with Loadout",
+        "description": "Swap your Claude Code setup like equipment.",
+        "steps": [
+          {
+            "id": "openPanel",
+            "title": "Open the Loadout panel",
+            "description": "Click the Loadout icon in the Activity Bar (or press Cmd+Shift+Alt+C).\n[Open panel](command:loadout.openPanel)",
+            "media": { "markdown": "media/walkthrough-open.md" },
+            "completionEvents": ["onView:loadout.sidebarView"]
+          },
+          {
+            "id": "exploreWorkspace",
+            "title": "Toggle agents and skills",
+            "description": "Use the Workspace tab to toggle agents and skills active or inactive. Active items are loaded into every Claude Code session.\n[Open panel](command:loadout.openPanel)",
+            "media": { "markdown": "media/walkthrough-workspace.md" },
+            "completionEvents": ["onCommand:loadout.openPanel"]
+          },
+          {
+            "id": "applyProfile",
+            "title": "Apply a profile",
+            "description": "Save your current setup as a named loadout profile and switch between them in one click.\n[Apply a profile](command:loadout.applyProfile)",
+            "media": { "markdown": "media/walkthrough-profiles.md" },
+            "completionEvents": ["onCommand:loadout.applyProfile"]
+          },
+          {
+            "id": "configure",
+            "title": "Configure catalog path (optional)",
+            "description": "If your Claude Code catalog lives somewhere other than ~/.claude, set the path in Settings.\n[Open settings](command:workbench.action.openSettings?%5B%22loadout%22%5D)",
+            "media": { "markdown": "media/walkthrough-settings.md" },
+            "completionEvents": ["onSettingsEdited"]
+          }
+        ]
+      }
+    ],
     "configuration": {
       "title": "Loadout",
       "properties": {
-        "claudeManager.globalCatalogPath": {
+        "loadout.globalCatalogPath": {
           "type": "string",
           "default": "",
-          "description": "Path to the global agents/skills catalog. Leave empty to use ~/.claude. (Setting key remains 'claudeManager.*' for backward compatibility with existing configs.)"
+          "description": "Path to the global agents/skills catalog. Leave empty to use ~/.claude."
         }
       }
     }
