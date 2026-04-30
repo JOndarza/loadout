@@ -63,6 +63,21 @@ export class ShellComponent {
 
   protected readonly density = computed(() => this.settings.settings().density);
 
+  private static readonly TOKEN_BUDGET_DEFAULT = 200_000;
+
+  protected readonly tokenBudgetPct = computed(() => {
+    const budget = (this.settings.settings() as { tokenBudget?: number }).tokenBudget
+      ?? ShellComponent.TOKEN_BUDGET_DEFAULT;
+    return Math.min(this.workspace.totalActiveTokens() / budget * 100, 100);
+  });
+
+  protected readonly tokenBudgetColor = computed(() => {
+    const pct = this.tokenBudgetPct();
+    if (pct >= 90) return 'var(--error)';
+    if (pct >= 70) return 'var(--primary)';
+    return 'var(--primary-dim)';
+  });
+
   private appliedDefaultTab = false;
 
   constructor() {

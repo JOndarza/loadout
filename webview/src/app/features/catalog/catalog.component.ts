@@ -3,6 +3,8 @@ import { CatalogState } from '@state/catalog.state';
 import { WorkspaceState } from '@state/workspace.state';
 import { TabFiltersState, type CatalogFilter } from '@state/tab-filters.state';
 import { CatalogBloc } from './catalog.bloc';
+import { SearchService } from '@core/search.service';
+import { ContextMenuService } from '@shared/overlays/context-menu.service';
 import {
   CmButtonComponent,
   CmCardComponent,
@@ -42,6 +44,8 @@ export class CatalogComponent {
   protected readonly workspace = inject(WorkspaceState);
   protected readonly filters = inject(TabFiltersState);
   private readonly bloc = inject(CatalogBloc);
+  private readonly search = inject(SearchService);
+  private readonly contextMenu = inject(ContextMenuService);
 
   readonly searchQuery = input<string>('');
   protected readonly registryOpen = signal(false);
@@ -72,7 +76,7 @@ export class CatalogComponent {
 
   protected readonly visibleCatalog = computed<CatalogRow[]>(() => {
     const f = this.filters.catalog().filter;
-    const q = this.searchQuery().toLowerCase().trim();
+    const { fuzzy } = this.search.parseQuery(this.searchQuery().trim());
     let rows = this.catalogRows();
 
     switch (f) {
@@ -88,22 +92,18 @@ export class CatalogComponent {
         return [];
     }
 
-    if (q) {
-      rows = rows.filter((r) =>
-        `${r.name} ${r.description} ${r.file}`.toLowerCase().includes(q),
-      );
+    if (fuzzy) {
+      rows = this.search.fuzzyFilter(rows, (r) => `${r.name} ${r.description} ${r.file}`, fuzzy);
     }
     return rows;
   });
 
   protected readonly visibleLocalOnly = computed<LocalOnlyRow[]>(() => {
     if (this.filters.catalog().filter !== 'local-only') return [];
-    const q = this.searchQuery().toLowerCase().trim();
+    const { fuzzy } = this.search.parseQuery(this.searchQuery().trim());
     let rows = this.localOnlyRows();
-    if (q) {
-      rows = rows.filter((r) =>
-        `${r.name} ${r.description} ${r.file}`.toLowerCase().includes(q),
-      );
+    if (fuzzy) {
+      rows = this.search.fuzzyFilter(rows, (r) => `${r.name} ${r.description} ${r.file}`, fuzzy);
     }
     return rows;
   });
@@ -172,5 +172,19 @@ export class CatalogComponent {
 
   protected runUpdate(): void {
     this.bloc.runUpdate();
+  }
+
+  protected onItemContextMenu(e: MouseEvent, item: CatalogRow): void {
+    e.preventDefault();
+    this.contextMenu.open({
+      x: e.clientX,
+      y: e.clientY,
+      items: [
+        ...(!item.inProject
+          ? [{ label: '↓ Adopt', action: () => this.pull(item) }]
+          : []),
+        { label: '⎘ Copy name', action: () => navigator.clipboard.writeText(item.name) },
+      ],
+    });
   }
 }

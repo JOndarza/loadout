@@ -3,12 +3,13 @@ import { ShellComponent } from './layout/shell.component';
 import { DataSyncService } from './core/data-sync.service';
 import { ThemeService } from './core/theme.service';
 import { ToastComponent } from './shared/overlays/toast.component';
+import { ContextMenuComponent } from './shared/overlays/context-menu.component';
 
 @Component({
   selector: 'cm-app',
   standalone: true,
-  imports: [ShellComponent, ToastComponent],
-  template: `<cm-shell /><cm-toast />`,
+  imports: [ShellComponent, ToastComponent, ContextMenuComponent],
+  template: `<cm-shell /><cm-toast /><cm-context-menu />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AppComponent implements OnInit {

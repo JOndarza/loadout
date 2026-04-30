@@ -56,7 +56,7 @@
   } @else {
     <ul class="cm-ws-list" role="list">
       @for (item of visibleItems(); track key(item)) {
-        <li>
+        <li (contextmenu)="onRowContextMenu($event, item)">
           <cm-card
             [active]="item.active"
             [selected]="isSelected(item)"
@@ -69,7 +69,15 @@
               <span class="cm-ws-memory" [attr.data-scope]="item.memoryScope" [title]="'memory: ' + item.memoryScope">M</span>
             }
             <div class="cm-ws-info">
-              <div class="cm-ws-name" [cmCopy]="item.name" title="Click to copy">{{ item.name }}</div>
+              <div class="cm-ws-name" [cmCopy]="item.name" title="Click to copy">
+              @for (seg of (item.name | highlightMatch : nameRanges(item.name)); track $index) {
+                @if (seg.match) {
+                  <mark class="cm-search-match">{{ seg.text }}</mark>
+                } @else {
+                  {{ seg.text }}
+                }
+              }
+            </div>
               @if (item.description) {
                 <div class="cm-ws-desc">{{ item.description }}</div>
               } @else {

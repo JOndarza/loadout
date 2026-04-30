@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import type { WorkspaceItem } from '@core/messages';
+import type { ItemType, WorkspaceItem } from '@core/messages';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceState {
@@ -33,5 +33,13 @@ export class WorkspaceState {
     this._agents.set(agents);
     this._skills.set(skills);
     this._commands.set(commands);
+  }
+
+  optimisticToggle(type: ItemType, file: string): void {
+    const flip = (items: WorkspaceItem[]) =>
+      items.map((i) => (i.file === file ? { ...i, active: !i.active } : i));
+    if (type === 'agents') this._agents.update(flip);
+    else if (type === 'skills') this._skills.update(flip);
+    else this._commands.update(flip);
   }
 }

@@ -108,7 +108,7 @@
   } @else {
     <ul class="cm-cat-list" role="list">
       @for (item of visibleCatalog(); track key(item)) {
-        <li>
+        <li (contextmenu)="onItemContextMenu($event, item)">
           <cm-card
             variant="catalog"
             [active]="item.inProject && item.syncStatus === 'synced'"

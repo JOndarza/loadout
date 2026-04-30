@@ -5,6 +5,8 @@ import { WorkspaceState } from '@state/workspace.state';
 import { ProfilesState } from '@state/profiles.state';
 import { TabFiltersState, type WorkspaceKind } from '@state/tab-filters.state';
 import { ShortcutsService } from '@core/shortcuts.service';
+import { SearchService } from '@core/search.service';
+import { ContextMenuService } from '@shared/overlays/context-menu.service';
 import {
   CmButtonComponent,
   CmCardComponent,
@@ -13,6 +15,7 @@ import {
   CmTokenBarComponent,
   CmToggleComponent,
   CopyToClipboardDirective,
+  HighlightMatchPipe,
   type SegmentedOption,
 } from '@shared/primitives';
 import type { ItemType, WorkspaceItem } from '@core/messages';
@@ -34,6 +37,7 @@ interface RowItem extends WorkspaceItem {
     CmButtonComponent,
     CmEmptyComponent,
     CopyToClipboardDirective,
+    HighlightMatchPipe,
   ],
   templateUrl: './workspace.component.html',
 })
@@ -43,6 +47,8 @@ export class WorkspaceComponent {
   protected readonly filters = inject(TabFiltersState);
   private readonly profiles = inject(ProfilesState);
   private readonly shortcuts = inject(ShortcutsService);
+  private readonly search = inject(SearchService);
+  private readonly contextMenu = inject(ContextMenuService);
 
   readonly searchQuery = input<string>('');
 
@@ -70,23 +76,54 @@ export class WorkspaceComponent {
     return [...a, ...s, ...c].sort((x, y) => x.name.localeCompare(y.name));
   });
 
+  protected readonly parsedQuery = computed(() => this.search.parseQuery(this.searchQuery().trim()));
+
   protected readonly visibleItems = computed<RowItem[]>(() => {
-    const q = this.searchQuery().toLowerCase().trim();
+    const { fuzzy, type: typeFilter, active: activeFilter, tokGt } = this.parsedQuery();
     const { kind, activeOnly, heavyOnly } = this.filters.workspace();
     const inAnyProfile = this.orphanOnly() ? this.profiles.allProfileItemFiles() : null;
 
-    return this.allItems().filter((it) => {
-      if (kind !== 'all' && it.type !== kind) return false;
-      if (activeOnly && !it.active) return false;
+    let items = this.allItems().filter((it) => {
+      const effectiveKind = typeFilter ?? (kind !== 'all' ? kind : null);
+      if (effectiveKind && it.type !== effectiveKind) return false;
+      if (activeOnly || activeFilter === true) { if (!it.active) return false; }
+      if (activeFilter === false && it.active) return false;
       if (heavyOnly && it.tokens <= 1000) return false;
+      if (tokGt !== undefined && it.tokens <= tokGt) return false;
       if (inAnyProfile && inAnyProfile.has(it.file)) return false;
-      if (q) {
-        const haystack = `${it.name} ${it.description} ${it.file}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
       return true;
     });
+
+    if (fuzzy) {
+      items = this.search.fuzzyFilter(items, (i) => `${i.name} ${i.description} ${i.file}`, fuzzy);
+    }
+
+    return items;
   });
+
+  protected onRowContextMenu(e: MouseEvent, item: RowItem): void {
+    e.preventDefault();
+    this.contextMenu.open({
+      x: e.clientX,
+      y: e.clientY,
+      items: [
+        {
+          label: item.active ? '✕ Disable' : '✓ Enable',
+          action: () => this.toggle(item),
+        },
+        {
+          label: '⎘ Copy name',
+          action: () => navigator.clipboard.writeText(item.name),
+        },
+      ],
+    });
+  }
+
+  protected nameRanges(name: string): [number, number][] {
+    const { fuzzy } = this.parsedQuery();
+    if (!fuzzy) return [];
+    return this.search.getMatchRanges(name, fuzzy);
+  }
 
   protected setKind(v: ItemKind): void {
     this.filters.patch('workspace', { kind: v });

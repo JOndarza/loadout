@@ -2,6 +2,8 @@
 // Components — cm-toast
 // =============================================================================
 
+@use '../abstracts' as *;
+
 .cm-toast {
   position: fixed;
   bottom: 16px;
@@ -12,7 +14,7 @@
   align-items: center;
   gap: 0.5rem;
   min-width: 240px;
-  max-width: 280px;
+  max-width: 320px;
   min-height: 40px;
   padding: 10px 14px;
 
@@ -26,7 +28,7 @@
   font-size: 12px;
   font-weight: 500;
   line-height: 1.4;
-  pointer-events: none;
+  pointer-events: auto;
 
   animation: cm-toast-in 280ms cubic-bezier(0.21, 1.02, 0.73, 1) both;
 
@@ -45,6 +47,28 @@
   flex-shrink: 0;
   color: var(--success);
   font-size: 11px;
+}
+
+.cm-toast-text {
+  flex: 1;
+}
+
+.cm-toast-action {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  transition: background var(--t-fast);
+
+  &:hover { background: rgba(var(--gold-rgb), 0.1); }
+  &:focus-visible { @include focus-ring; }
 }
 
 .cm-toast.is-leaving {

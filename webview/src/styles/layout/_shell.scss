@@ -394,9 +394,34 @@ cm-shell {
 
 .cm-stat-tokens {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--sp-2);
   color: var(--text-muted);
+}
+
+.cm-token-budget-bar {
+  width: 60px;
+  height: 3px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  align-self: center;
+  flex-shrink: 0;
+
+  @media (prefers-reduced-motion: reduce) {
+    .cm-token-budget-fill { transition: none; }
+  }
+}
+
+[data-theme='light'] .cm-token-budget-bar {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.cm-token-budget-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary-dim);
+  transition: width var(--t-normal), background var(--t-normal);
 }
 
 .cm-stat-tokens-num {

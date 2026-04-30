@@ -32,12 +32,14 @@
   "packageManager": "npm@11.12.1",
   "dependencies": {
     "@angular/animations": "^21.2.7",
+    "@angular/cdk": "^21.2.9",
     "@angular/common": "^21.2.7",
     "@angular/compiler": "^21.2.7",
     "@angular/core": "^21.2.7",
     "@angular/forms": "^21.2.7",
     "@angular/platform-browser": "^21.2.7",
     "@fontsource/roboto": "^5.2.10",
+    "@leeoniya/ufuzzy": "^1.0.19",
     "lucide-angular": "^1.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

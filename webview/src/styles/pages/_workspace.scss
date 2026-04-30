@@ -14,6 +14,20 @@ cm-workspace {
   gap: var(--sp-3);
 }
 
+// ─── Search match highlight ───────────────────────────────────────────────────
+mark.cm-search-match {
+  background: rgba(var(--gold-rgb), 0.25);
+  color: var(--gold-bright);
+  border-radius: 2px;
+  padding: 0 1px;
+  font-style: normal;
+}
+
+[data-theme='light'] mark.cm-search-match {
+  background: rgba(var(--gold-rgb), 0.3);
+  color: var(--gold);
+}
+
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
 .cm-ws-toolbar {
   display: flex;

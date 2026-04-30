@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, HostListener, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ProfilesState, type ProfileEntry } from '@state/profiles.state';
 import { WorkspaceState } from '@state/workspace.state';
 import { ShortcutsService } from '@core/shortcuts.service';
+import { ToastService } from '@core/toast.service';
+import { ContextMenuService } from '@shared/overlays/context-menu.service';
 import { ProfilesBloc } from './profiles.bloc';
 import type { PendingItems } from '@core/messages';
 import { CmButtonComponent, CmCardComponent, CmEmptyComponent } from '@shared/primitives';
@@ -22,9 +24,17 @@ export class ProfilesComponent {
   protected readonly workspace = inject(WorkspaceState);
   private readonly bloc = inject(ProfilesBloc);
   private readonly shortcuts = inject(ShortcutsService);
+  private readonly toast = inject(ToastService);
+  private readonly contextMenu = inject(ContextMenuService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly nameInput = viewChild<ElementRef<HTMLInputElement>>('nameInput');
 
+  private readonly _deletePending = signal<Set<string>>(new Set());
+  protected readonly deletePending = this._deletePending.asReadonly();
+  private readonly deleteTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
   protected readonly newName = signal('');
+  protected readonly openMenuFor = signal<string | null>(null);
   protected readonly editingName = signal<string | null>(null);
   protected readonly editingItems = signal<{ agents: Set<string>; skills: Set<string>; commands: Set<string> } | null>(null);
   protected readonly renameTo = signal<string>('');
@@ -44,6 +54,24 @@ export class ProfilesComponent {
         this.nameInput()?.nativeElement.focus();
       }
     });
+
+    this.destroyRef.onDestroy(() => {
+      for (const [name, timer] of this.deleteTimers) {
+        clearTimeout(timer);
+        this.bloc.deleteProfile(name);
+      }
+      this.deleteTimers.clear();
+    });
+  }
+
+  @HostListener('document:click')
+  protected closeMenu(): void {
+    this.openMenuFor.set(null);
+  }
+
+  protected toggleMenu(name: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.openMenuFor.set(this.openMenuFor() === name ? null : name);
   }
 
   protected isActive(name: string): boolean {
@@ -105,7 +133,27 @@ export class ProfilesComponent {
   }
 
   protected remove(name: string): void {
-    this.bloc.deleteProfile(name);
+    const pending = new Set(this._deletePending());
+    pending.add(name);
+    this._deletePending.set(pending);
+
+    const timer = setTimeout(() => {
+      this.bloc.deleteProfile(name);
+      this.deleteTimers.delete(name);
+      const next = new Set(this._deletePending());
+      next.delete(name);
+      this._deletePending.set(next);
+    }, 5000);
+
+    this.deleteTimers.set(name, timer);
+
+    this.toast.showWithAction(`Loadout "${name}" deleted`, 'Undo', () => {
+      clearTimeout(timer);
+      this.deleteTimers.delete(name);
+      const next = new Set(this._deletePending());
+      next.delete(name);
+      this._deletePending.set(next);
+    }, 5000);
   }
 
   protected duplicate(from: string): void {
@@ -234,6 +282,20 @@ export class ProfilesComponent {
   protected cancelEdit(): void {
     this.editingName.set(null);
     this.editingItems.set(null);
+  }
+
+  protected onCardContextMenu(e: MouseEvent, p: ProfileEntry): void {
+    e.preventDefault();
+    this.contextMenu.open({
+      x: e.clientX,
+      y: e.clientY,
+      items: [
+        { label: this.isActive(p.name) ? '● Active' : '▶ Apply', action: () => this.requestApply(p.name) },
+        { label: '⎘ Duplicate', action: () => this.duplicate(p.name) },
+        { label: '↑ Export', action: () => this.exportProfile(p.name) },
+        { label: '✕ Delete', variant: 'danger', action: () => this.remove(p.name) },
+      ],
+    });
   }
 
   // ─── Drag reorder ────────────────────────────────────────────────────────────

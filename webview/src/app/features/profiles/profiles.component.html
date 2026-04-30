@@ -31,11 +31,13 @@
   } @else {
     <ul class="cm-profiles-list" role="list">
       @for (p of entries(); track p.name; let i = $index) {
+        @if (!deletePending().has(p.name)) {
         <li
           [draggable]="renamingFrom() !== p.name && editingName() !== p.name"
           (dragstart)="onDragStart(i)"
           (dragover)="onDragOver($any($event))"
           (drop)="onDrop(i)"
+          (contextmenu)="onCardContextMenu($event, p)"
         >
           <cm-card [active]="isActive(p.name)" variant="profile">
             <span class="cm-profiles-drag" aria-hidden="true">⋮⋮</span>
@@ -98,10 +100,12 @@
                 </div>
               }
 
-              <div class="cm-profiles-meta">
+              <div class="cm-profiles-counts">
                 <strong>{{ p.agents.length }}</strong> agents ·
                 <strong>{{ p.skills.length }}</strong> skills ·
-                <strong>{{ p.commands.length }}</strong> commands ·
+                <strong>{{ p.commands.length }}</strong> commands
+              </div>
+              <div class="cm-profiles-hover-meta">
                 {{ formatDate(p.createdAt) }}
                 @if (p.appliedCount > 0) {
                   · applied <strong>{{ p.appliedCount }}×</strong>
@@ -110,19 +114,35 @@
             </div>
 
             <div class="cm-profiles-actions">
-              <cm-button variant="ghost" size="sm" (click)="startEdit(p)" title="Edit items">✎</cm-button>
-              <cm-button variant="ghost" size="sm" (click)="duplicate(p.name)" title="Duplicate">⎘</cm-button>
-              <cm-button variant="ghost" size="sm" (click)="exportProfile(p.name)" title="Export to file">↑</cm-button>
               <cm-button
                 variant="gold"
                 size="sm"
                 (click)="requestApply(p.name)"
                 [disabled]="isActive(p.name)"
-                title="Apply"
+                title="Apply loadout"
               >
                 {{ isActive(p.name) ? 'Active' : 'Apply' }}
               </cm-button>
-              <cm-button variant="danger" size="sm" (click)="remove(p.name)" title="Delete">✕</cm-button>
+              <div class="cm-card-menu-wrap">
+                <button
+                  type="button"
+                  class="cm-card-menu-trigger"
+                  [class.is-open]="openMenuFor() === p.name"
+                  [attr.aria-label]="'More actions for ' + p.name"
+                  [attr.aria-expanded]="openMenuFor() === p.name"
+                  (click)="toggleMenu(p.name, $event)"
+                >⋯</button>
+                @if (openMenuFor() === p.name) {
+                  <div class="cm-card-menu" role="menu">
+                    <button type="button" class="cm-card-menu-item" role="menuitem" (click)="startEdit(p)">✎ Edit items</button>
+                    <button type="button" class="cm-card-menu-item" role="menuitem" (click)="startRename(p.name)">✏ Rename</button>
+                    <button type="button" class="cm-card-menu-item" role="menuitem" (click)="duplicate(p.name)">⎘ Duplicate</button>
+                    <button type="button" class="cm-card-menu-item" role="menuitem" (click)="exportProfile(p.name)">↑ Export</button>
+                    <div class="cm-card-menu-divider" role="separator"></div>
+                    <button type="button" class="cm-card-menu-item" role="menuitem" data-variant="danger" (click)="remove(p.name)">✕ Delete</button>
+                  </div>
+                }
+              </div>
             </div>
           </cm-card>
 
@@ -182,6 +202,7 @@
             </div>
           }
         </li>
+        } <!-- @if !deletePending -->
       }
     </ul>
   }

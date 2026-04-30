@@ -139,7 +139,7 @@ cm-profiles {
   @include ring(rgba(var(--gold-rgb), 0.4));
 }
 
-.cm-profiles-meta {
+.cm-profiles-counts {
   font-size: 11px;
   color: var(--text-muted);
   font-family: var(--font-body);
@@ -149,6 +149,30 @@ cm-profiles {
     font-family: var(--font-mono);
     font-weight: 700;
   }
+}
+
+.cm-profiles-hover-meta {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height var(--t-normal), opacity var(--t-fast);
+
+  strong {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  @media (prefers-reduced-motion: reduce) { transition: none; }
+}
+
+.cm-card:hover .cm-profiles-hover-meta,
+.cm-card:focus-within .cm-profiles-hover-meta {
+  max-height: 40px;
+  opacity: 1;
 }
 
 .cm-profiles-rename-input {
@@ -174,6 +198,7 @@ cm-profiles {
 
 .cm-profiles-actions {
   display: flex;
+  align-items: center;
   gap: var(--sp-1);
   flex-shrink: 0;
 
@@ -181,6 +206,93 @@ cm-profiles {
     flex-wrap: wrap;
     justify-content: flex-end;
   }
+}
+
+// ─── Card overflow menu ──────────────────────────────────────────────────────
+.cm-card-menu-wrap {
+  position: relative;
+}
+
+.cm-card-menu-trigger {
+  @include button-reset;
+  @include focus-ring;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  font-size: 16px;
+  letter-spacing: -1px;
+  color: var(--text-dim);
+  transition: background var(--t-fast), color var(--t-fast);
+
+  &:hover,
+  &.is-open {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+  }
+}
+
+[data-theme='light'] .cm-card-menu-trigger {
+  &:hover,
+  &.is-open {
+    background: rgba(0, 0, 0, 0.06);
+  }
+}
+
+.cm-card-menu {
+  position: absolute;
+  top: calc(100% + var(--sp-1));
+  right: 0;
+  z-index: var(--z-overlay);
+  min-width: 148px;
+  padding: var(--sp-1);
+  border-radius: var(--r-md);
+  background: var(--surface-3);
+  box-shadow: var(--ring-soft), var(--shadow-ambient);
+  animation: cm-card-in 150ms ease both;
+
+  @media (prefers-reduced-motion: reduce) { animation: none; }
+}
+
+.cm-card-menu-item {
+  @include button-reset;
+  @include focus-ring;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: background var(--t-fast), color var(--t-fast);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+  }
+
+  &[data-variant='danger']:hover {
+    background: rgba(255, 110, 132, 0.1);
+    color: var(--error);
+  }
+}
+
+[data-theme='light'] .cm-card-menu-item {
+  &:hover { background: rgba(0, 0, 0, 0.05); }
+  &[data-variant='danger']:hover { background: rgba(220, 38, 38, 0.06); }
+}
+
+.cm-card-menu-divider {
+  height: 1px;
+  margin: var(--sp-1) 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme='light'] .cm-card-menu-divider {
+  background: rgba(0, 0, 0, 0.06);
 }
 
 // ─── Edit panel (chips) ──────────────────────────────────────────────────────
